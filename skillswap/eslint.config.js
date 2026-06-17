@@ -18,4 +18,10 @@ export default defineConfig([
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
   },
+  {
+    files: ['src/**/AuthContext.jsx', 'src/**/ToastContext.jsx'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
 ])
