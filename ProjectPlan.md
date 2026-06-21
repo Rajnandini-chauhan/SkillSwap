@@ -304,37 +304,99 @@ All user learning history, notes, test scores, reflections, and feed posts are s
 
 ```
 src/
-├── components/
-│   ├── common/          # Button, Input, Modal, Card, Avatar
-│   ├── session/         # FocusTimer, CameraView, SessionSummary
-│   ├── notes/           # NotesUpload, NotesEditor
-│   ├── test/            # MCQCard, OpenAnswer, ScoreCard
-│   ├── feed/            # FeedPost, DoubtThread, ReplyBox
-│   └── reflection/      # ReflectionEditor, ReflectionTimeline
-├── pages/
-│   ├── Dashboard.jsx
-│   ├── FocusSession.jsx
-│   ├── NotesPage.jsx
-│   ├── TestPage.jsx
-│   ├── CommunityFeed.jsx
-│   ├── WeeklyReflection.jsx
-│   ├── Profile.jsx
-│   └── Auth/            # Login.jsx, Register.jsx
-├── store/
-│   ├── authStore.js
-│   ├── sessionStore.js
-│   └── feedStore.js
-├── services/
-│   ├── api.js           # Axios instance with interceptors
-│   ├── authService.js
-│   ├── sessionService.js
-│   ├── notesService.js
-│   ├── testService.js
-│   └── feedService.js
-└── utils/
-    ├── formatDate.js
-    ├── scoreColors.js
-    └── timerUtils.js
+│
+├── app/
+│   ├── router.jsx
+│   ├── providers.jsx
+│   └── App.jsx
+│
+├── features/
+│   │
+│   ├── auth/
+│   │   ├── pages/
+│   │   │   ├── LoginPage.jsx
+│   │   │   └── RegisterPage.jsx
+│   │   │
+│   │   ├── components/
+│   │   │   ├── LoginForm.jsx
+│   │   │   └── RegisterForm.jsx
+│   │   │
+│   │   ├── services/
+│   │   │   └── auth.service.js
+│   │   │
+│   │   ├── hooks/
+│   │   │   └── useAuth.js
+│   │   │
+│   │   └── store/
+│   │       └── authStore.js
+│   │
+│   ├── dashboard/
+│   │   ├── pages/
+│   │   │   └── DashboardPage.jsx
+│   │   │
+│   │   ├── components/
+│   │   │   ├── XPCard.jsx
+│   │   │   ├── StreakCard.jsx
+│   │   │   └── SkillGrid.jsx
+│   │   │
+│   │   └── services/
+│   │       └── dashboard.service.js
+│   │
+│   ├── sessions/
+│   │   ├── pages/
+│   │   │   └── SessionPage.jsx
+│   │   │
+│   │   ├── components/
+│   │   │   ├── FocusTimer.jsx
+│   │   │   ├── CameraView.jsx
+│   │   │   └── SessionSummary.jsx
+│   │   │
+│   │   ├── services/
+│   │   │   └── session.service.js
+│   │   │
+│   │   └── store/
+│   │       └── sessionStore.js
+│   │
+│   ├── notes/
+│   ├── tests/
+│   ├── feed/
+│   ├── profile/
+│   └── reflections/
+│
+├── shared/
+│   │
+│   ├── components/
+│   │   ├── Button.jsx
+│   │   ├── Input.jsx
+│   │   ├── Modal.jsx
+│   │   ├── Loader.jsx
+│   │   └── Navbar.jsx
+│   │
+│   ├── layouts/
+│   │   └── AppShell.jsx
+│   │
+│   ├── services/
+│   │   └── api.js
+│   │
+│   ├── hooks/
+│   │   ├── useDebounce.js
+│   │   └── useLocalStorage.js
+│   │
+│   ├── utils/
+│   │   ├── formatDate.js
+│   │   ├── constants.js
+│   │   └── helpers.js
+│   │
+│   └── assets/
+│
+├── context/
+│   ├── AuthContext.jsx
+│   └── ToastContext.jsx
+│
+├── styles/
+│   └── global.css
+│
+└── main.jsx
 ```
 
 ### 10.3 Routing
@@ -372,40 +434,89 @@ src/
 ### 11.2 Folder structure
 
 ```
-server/
-├── config/
-│   ├── db.js            # MongoDB connection
-│   └── cloudinary.js    # Cloudinary config
-├── middleware/
-│   ├── authMiddleware.js # JWT verify
-│   ├── uploadMiddleware.js # Multer config
-│   └── errorHandler.js
-├── models/
-│   ├── User.js
-│   ├── Session.js
-│   ├── Note.js
-│   ├── Test.js
-│   ├── FeedPost.js
-│   └── Reflection.js
-├── routes/
-│   ├── authRoutes.js
-│   ├── sessionRoutes.js
-│   ├── notesRoutes.js
-│   ├── testRoutes.js
-│   ├── feedRoutes.js
-│   └── reflectionRoutes.js
-├── controllers/
-│   ├── authController.js
-│   ├── sessionController.js
-│   ├── notesController.js
-│   ├── testController.js
-│   ├── feedController.js
-│   └── reflectionController.js
-├── services/
-│   ├── huggingfaceService.js  # All HF API calls
-│   ├── ocrService.js          # Tesseract + pdf-parse
-│   └── cronService.js         # Weekly jobs
-└── server.js
+backend/
+│
+├── src/
+│   │
+│   ├── config/
+│   │   ├── db.js
+│   │   ├── cloudinary.js
+│   │   └── env.js
+│   │
+│   ├── middleware/
+│   │   ├── auth.middleware.js
+│   │   ├── error.middleware.js
+│   │   ├── upload.middleware.js
+│   │   └── validate.middleware.js
+│   │
+│   ├── modules/
+│   │   │
+│   │   ├── auth/
+│   │   │   ├── auth.controller.js
+│   │   │   ├── auth.service.js
+│   │   │   ├── auth.routes.js
+│   │   │   ├── auth.validation.js
+│   │   │   └── auth.model.js
+│   │   │
+│   │   ├── users/
+│   │   │   ├── user.controller.js
+│   │   │   ├── user.service.js
+│   │   │   ├── user.routes.js
+│   │   │   └── user.model.js
+│   │   │
+│   │   ├── sessions/
+│   │   │   ├── session.controller.js
+│   │   │   ├── session.service.js
+│   │   │   ├── session.routes.js
+│   │   │   └── session.model.js
+│   │   │
+│   │   ├── notes/
+│   │   │   ├── notes.controller.js
+│   │   │   ├── notes.service.js
+│   │   │   ├── notes.routes.js
+│   │   │   └── notes.model.js
+│   │   │
+│   │   ├── tests/
+│   │   │   ├── test.controller.js
+│   │   │   ├── test.service.js
+│   │   │   ├── test.routes.js
+│   │   │   └── test.model.js
+│   │   │
+│   │   ├── feed/
+│   │   │   ├── feed.controller.js
+│   │   │   ├── feed.service.js
+│   │   │   ├── feed.routes.js
+│   │   │   └── feed.model.js
+│   │   │
+│   │   └── reflections/
+│   │       ├── reflection.controller.js
+│   │       ├── reflection.service.js
+│   │       ├── reflection.routes.js
+│   │       └── reflection.model.js
+│   │
+│   ├── services/
+│   │   ├── huggingface.service.js
+│   │   ├── ocr.service.js
+│   │   ├── storage.service.js
+│   │   └── cron.service.js
+│   │
+│   ├── utils/
+│   │   ├── ApiError.js
+│   │   ├── asyncHandler.js
+│   │   ├── jwt.js
+│   │   └── constants.js
+│   │
+│   ├── app.js
+│   └── server.js
+│
+├── uploads/
+│
+├── tests/
+│
+├── .env
+├── .gitignore
+├── package.json
+└── README.md
 ```
 
 ### 11.3 API endpoints
