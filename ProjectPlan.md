@@ -115,13 +115,13 @@ Studies alone every day. Has no community. Wants to see others progressing and f
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                    CLIENT (React)                        │
-│  Dashboard │ Focus Session │ Notes │ AI Test │ Community │
+│                    CLIENT (React)                       │
+│  Dashboard │ Focus Session │ Notes │ AI Test │ Community│
 └──────────────────────┬──────────────────────────────────┘
                        │ REST API (HTTP/JSON)
 ┌──────────────────────▼──────────────────────────────────┐
-│               BACKEND (Node.js + Express)                │
-│  Auth │ Sessions │ Notes │ AI Test │ Feed │ Reflections  │
+│               BACKEND (Node.js + Express)               │
+│  Auth │ Sessions │ Notes │ AI Test │ Feed │ Reflections │
 └───────┬──────────┬───────────────┬────────────┬─────────┘
         │          │               │            │
    ┌────▼───┐ ┌────▼────┐   ┌─────▼─────┐ ┌───▼──────┐
@@ -130,7 +130,7 @@ Studies alone every day. Has no community. Wants to see others progressing and f
    └────────┘ └─────────┘   └───────────┘ └──────────┘
 
 ┌─────────────────────────────────────────────────────────┐
-│                  DEPLOYMENT                              │
+│                  DEPLOYMENT                             │
 │  Vercel (Frontend) │ Render (Backend) │ Atlas (DB)      │
 └─────────────────────────────────────────────────────────┘
 ```
