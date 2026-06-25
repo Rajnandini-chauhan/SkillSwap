@@ -1,7 +1,3 @@
-// ═══════════════════════════════════════════════
-// SKILLSHARE – TOAST CONTEXT
-// Global notification system
-// ═══════════════════════════════════════════════
 
 import { createContext, useContext, useState, useCallback } from 'react'
 

@@ -1,7 +1,4 @@
-// ═══════════════════════════════════════════════
-// SKILLDGE – AUTH PAGE
-// Real name, real user — warm onboarding
-// ═══════════════════════════════════════════════
+
 
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'

@@ -1,7 +1,4 @@
-// ═══════════════════════════════════════════════
-// SKILLDGE – LANDING PAGE
-// Warm, emotional, human — not another SaaS template
-// ═══════════════════════════════════════════════
+
 
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -61,11 +58,10 @@ export default function LandingPage() {
             fontSize: 18, color: '#fff',
           }}>✦</div>
           <span style={{
-            fontFamily: 'Playfair Display, serif',
-            fontSize: 20, fontWeight: 800,
+                        fontSize: 20, fontWeight: 800,
             color: 'var(--text)',
             letterSpacing: '-0.3px',
-          }}>Skilldge</span>
+          }}>SkillSwap</span>
         </div>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           <button className="btn btn-ghost" onClick={() => navigate('/auth?mode=login')}
@@ -100,8 +96,7 @@ export default function LandingPage() {
         </div>
 
         <h1 style={{
-          fontFamily: 'Playfair Display, serif',
-          fontSize: 'clamp(42px, 7vw, 76px)',
+                    fontSize: 'clamp(42px, 7vw, 76px)',
           fontWeight: 900,
           lineHeight: 1.05,
           letterSpacing: '-2px',

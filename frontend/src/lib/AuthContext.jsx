@@ -1,8 +1,3 @@
-// ═══════════════════════════════════════════════
-// SKILLDGE – AUTH CONTEXT
-// Full localStorage persistence — data survives refresh
-// ═══════════════════════════════════════════════
-
 import { createContext, useContext, useState, useEffect } from 'react'
 
 const AuthContext = createContext(null)

@@ -1,6 +1,3 @@
-// ═══════════════════════════════════════════════
-// SKILLSHARE – APP DATA & CONSTANTS
-// ═══════════════════════════════════════════════
 
 export const SKILLS = [
   'Python', 'JavaScript', 'Design', 'React', 'SQL',

@@ -1,58 +1,65 @@
-// ═══════════════════════════════════════════════
-// SKILLDGE – AUTH PAGE
-// Real name, real user — warm onboarding
-// ═══════════════════════════════════════════════
-
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
+import ThemeToggle from '../components/ThemeToggle'
+import { NotesIllustration, RainbowCloudIllustration } from '../components/DashboardIllustrations'
 
-const AVATAR_COLORS = ['#C4603A','#3D7A5C','#8B6B4A','#5A7A8A','#7A5A8A','#8A7A3A']
+const AVATAR_COLORS = ['#C4603A', '#3D7A5C', '#8B6B4A', '#5A7A8A', '#7A5A8A', '#8A7A3A']
 
 function getInitials(name) {
-  return name.trim().split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+  return name.trim().split(' ').map(word => word[0]).join('').toUpperCase().slice(0, 2)
 }
 
 function pickColor(name) {
-  const idx = name.charCodeAt(0) % AVATAR_COLORS.length
-  return AVATAR_COLORS[idx]
+  const index = name.charCodeAt(0) % AVATAR_COLORS.length
+  return AVATAR_COLORS[index]
 }
 
 export default function AuthPage() {
   const [params] = useSearchParams()
-  const [mode, setMode]       = useState(params.get('mode') || 'login')
-  const [name, setName]       = useState('')
-  const [email, setEmail]     = useState('')
+  const [mode, setMode] = useState(params.get('mode') || 'login')
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError]     = useState('')
+  const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
   const { login } = useAuth()
-  const navigate  = useNavigate()
+  const navigate = useNavigate()
 
-  async function handleSubmit(e) {
-    e.preventDefault()
+  async function handleSubmit(event) {
+    event.preventDefault()
     setError('')
 
-    if (!email.trim() || !password.trim()) { setError('Please fill in all fields.'); return }
-    if (mode === 'signup' && !name.trim())  { setError('What should we call you?'); return }
-    if (mode === 'signup' && name.trim().length < 2) { setError('Please enter your full name.'); return }
+    if (!email.trim() || !password.trim()) {
+      setError('Please fill in all fields.')
+      return
+    }
+    if (mode === 'signup' && !name.trim()) {
+      setError('What should we call you?')
+      return
+    }
+    if (mode === 'signup' && name.trim().length < 2) {
+      setError('Please enter your full name.')
+      return
+    }
 
     setLoading(true)
-    await new Promise(r => setTimeout(r, 600)) // feels real
+    await new Promise(resolve => setTimeout(resolve, 600))
 
-    const displayName = mode === 'signup' ? name.trim() : (
-      // On login, load existing user name from storage or use email prefix
-      (() => {
-        try {
-          const existing = localStorage.getItem('skilldge_user')
-          if (existing) return JSON.parse(existing).name
-        } catch (error) { void error }
-        return email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
-      })()
-    )
+    const displayName = mode === 'signup'
+      ? name.trim()
+      : (() => {
+          try {
+            const existing = localStorage.getItem('skilldge_user')
+            if (existing) return JSON.parse(existing).name
+          } catch (storageError) {
+            void storageError
+          }
+          return email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, letter => letter.toUpperCase())
+        })()
 
-    const user = {
+    login({
       name: displayName,
       email: email.trim().toLowerCase(),
       avatar: getInitials(displayName),
@@ -62,128 +69,87 @@ export default function AuthPage() {
       streak: 0,
       xp: 0,
       joinedAt: new Date().toISOString(),
-    }
+    })
 
-    login(user)
     setLoading(false)
     navigate(mode === 'signup' ? '/setup' : '/app/dashboard')
   }
 
-  return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'var(--bg)',
-      display: 'flex',
-      position: 'relative',
-      overflow: 'hidden',
-    }}>
-      {/* Left decorative panel */}
-      <div style={{
-        flex: 1,
-        background: 'linear-gradient(160deg, #F3EFE6 0%, #EDE7D9 100%)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 60,
-        position: 'relative',
-        overflow: 'hidden',
-      }} className="hide-mobile">
-        <div style={{
-          position: 'absolute', top: -80, right: -80,
-          width: 300, height: 300,
-          borderRadius: '50%',
-          background: 'rgba(196,96,58,0.08)',
-        }} />
-        <div style={{ position: 'relative', zIndex: 1, maxWidth: 340 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 48 }}>
-            <div style={{
-              width: 36, height: 36, background: 'var(--accent)',
-              borderRadius: 10, display: 'flex', alignItems: 'center',
-              justifyContent: 'center', fontSize: 18, color: '#fff',
-            }}>✦</div>
-            <span style={{ fontFamily: 'Playfair Display, serif', fontSize: 20, fontWeight: 800 }}>Skilldge</span>
-          </div>
+  function changeMode(nextMode) {
+    setMode(nextMode)
+    setError('')
+  }
 
-          <h2 style={{
-            fontFamily: 'Playfair Display, serif',
-            fontSize: 36, fontWeight: 900,
-            lineHeight: 1.15, marginBottom: 16,
-            letterSpacing: '-1px',
-          }}>
+  return (
+    <main className="classic-auth-page">
+      <section className="classic-auth-showcase hide-mobile" aria-label="About SkillSwap">
+        <div className="classic-auth-orb" aria-hidden="true" />
+        <div className="classic-auth-showcase-content">
+          <button type="button" className="classic-auth-brand" onClick={() => navigate('/')} aria-label="Go to SkillSwap home">
+            <span className="classic-auth-brand-mark">✦</span>
+            <span>SkillSwap</span>
+          </button>
+
+          <h1>
             Every lesson<br />
-            <em style={{ color: 'var(--accent)' }}>is a step forward.</em>
-          </h2>
-          <p style={{ fontSize: 15, color: 'var(--text2)', lineHeight: 1.8 }}>
-            Your learning journey, your notes, your growth — all in one place that remembers where you left off.
+            <em>is a step forward.</em>
+          </h1>
+
+          <p className="classic-auth-intro">
+            Your learning journey, your notes, and your growth — all in one calm place that remembers where you left off.
           </p>
 
-          <div style={{ marginTop: 48, display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {[
-              { icon: '📹', text: 'Camera-on accountability' },
-              { icon: '🧠', text: 'Unlimited AI deep-dive questions' },
-              { icon: '🤝', text: 'Peer matching & teaching' },
-            ].map(f => (
-              <div key={f.text} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{
-                  width: 36, height: 36, borderRadius: 10,
-                  background: 'var(--card)', border: '1.5px solid var(--border)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 16, flexShrink: 0,
-                }}>{f.icon}</div>
-                <span style={{ fontSize: 14, color: 'var(--text2)' }}>{f.text}</span>
+          <div className="classic-auth-preview" aria-hidden="true">
+            <div className="classic-auth-preview__note">
+              <NotesIllustration />
+            </div>
+
+            <div className="classic-auth-preview__goal">
+              <div className="classic-auth-preview__goal-head">
+                <span>Weekly goal</span>
+                <strong>3/4</strong>
               </div>
-            ))}
+              <div className="classic-auth-preview__track"><span /></div>
+              <div className="classic-auth-preview__days">
+                <i /><i /><i />
+              </div>
+              <div className="classic-auth-preview__mini-track"><span /></div>
+            </div>
+
+            <div className="classic-auth-preview__rainbow">
+              <RainbowCloudIllustration />
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Right form panel */}
-      <div style={{
-        width: '100%', maxWidth: 480,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '48px 40px',
-        background: 'var(--card)',
-        boxShadow: '-4px 0 40px rgba(28,24,18,0.06)',
-      }}>
-        <div style={{ width: '100%', maxWidth: 380 }}>
-          {/* Mobile logo */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 36 }}>
-            <div style={{
-              width: 30, height: 30, background: 'var(--accent)',
-              borderRadius: 8, display: 'flex', alignItems: 'center',
-              justifyContent: 'center', fontSize: 15, color: '#fff',
-            }}>✦</div>
-            <span style={{ fontFamily: 'Playfair Display, serif', fontSize: 17, fontWeight: 800 }}>Skilldge</span>
-          </div>
+      <section className="classic-auth-form-panel">
+        <div className="classic-auth-theme"><ThemeToggle compact /></div>
 
-          <h2 style={{ fontSize: 26, fontWeight: 900, marginBottom: 6, letterSpacing: '-0.5px' }}>
-            {mode === 'login' ? 'Good to see you again' : 'Create your account'}
-          </h2>
-          <p style={{ fontSize: 14, color: 'var(--text2)', marginBottom: 30, lineHeight: 1.6 }}>
+        <div className="classic-auth-form-wrap">
+          <button type="button" className="classic-auth-mobile-brand" onClick={() => navigate('/')} aria-label="Go to SkillSwap home">
+            <span className="classic-auth-brand-mark">✦</span>
+            <span>SkillSwap</span>
+          </button>
+
+          <h2>{mode === 'login' ? 'Good to see you again' : 'Create your account'}</h2>
+          <p className="classic-auth-subtitle">
             {mode === 'login'
               ? 'Pick up right where you left off.'
-              : 'Join thousands of people learning something new today.'}
+              : 'Join people who are learning and sharing something new.'}
           </p>
 
-          {/* Toggle */}
-          <div style={{
-            display: 'flex', background: 'var(--bg2)',
-            borderRadius: 50, padding: 3, marginBottom: 28,
-            border: '1.5px solid var(--border)',
-          }}>
-            {['login', 'signup'].map(m => (
-              <button key={m} onClick={() => { setMode(m); setError('') }} style={{
-                flex: 1, padding: '9px 0',
-                border: 'none',
-                background: mode === m ? 'var(--accent)' : 'transparent',
-                color: mode === m ? '#fff' : 'var(--text2)',
-                borderRadius: 50, cursor: 'pointer',
-                fontSize: 13, fontWeight: 600,
-                transition: 'all 0.2s',
-                fontFamily: 'Plus Jakarta Sans, sans-serif',
-              }}>
-                {m === 'login' ? 'Sign in' : 'Sign up'}
+          <div className="classic-auth-tabs" role="tablist" aria-label="Authentication mode">
+            {['login', 'signup'].map(option => (
+              <button
+                key={option}
+                type="button"
+                role="tab"
+                aria-selected={mode === option}
+                className={mode === option ? 'is-active' : ''}
+                onClick={() => changeMode(option)}
+              >
+                {option === 'login' ? 'Sign in' : 'Sign up'}
               </button>
             ))}
           </div>
@@ -191,71 +157,60 @@ export default function AuthPage() {
           <form onSubmit={handleSubmit}>
             {mode === 'signup' && (
               <div className="form-group">
-                <label>Your full name</label>
+                <label htmlFor="full-name">Your full name</label>
                 <input
+                  id="full-name"
                   type="text"
                   placeholder="e.g. Priya Sharma"
                   value={name}
-                  onChange={e => setName(e.target.value)}
+                  onChange={event => setName(event.target.value)}
+                  autoComplete="name"
                   autoFocus
                 />
               </div>
             )}
 
             <div className="form-group">
-              <label>Email address</label>
+              <label htmlFor="email">Email address</label>
               <input
+                id="email"
                 type="email"
                 placeholder="you@example.com"
                 value={email}
-                onChange={e => setEmail(e.target.value)}
+                onChange={event => setEmail(event.target.value)}
+                autoComplete="email"
               />
             </div>
 
             <div className="form-group">
-              <label>Password</label>
+              <label htmlFor="password">Password</label>
               <input
+                id="password"
                 type="password"
                 placeholder="At least 8 characters"
                 value={password}
-                onChange={e => setPassword(e.target.value)}
+                onChange={event => setPassword(event.target.value)}
+                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
               />
             </div>
 
-            {error && (
-              <div style={{
-                fontSize: 13, color: '#dc4a3a',
-                background: '#FDF0EE', border: '1px solid #F0C8C4',
-                borderRadius: 'var(--radius-sm)', padding: '10px 14px',
-                marginBottom: 16,
-              }}>
-                {error}
-              </div>
-            )}
+            {error && <div className="classic-auth-error" role="alert">{error}</div>}
 
-            <button
-              type="submit"
-              className="btn btn-primary btn-full"
-              style={{ padding: 15, fontSize: 15, marginTop: 4 }}
-              disabled={loading}
-            >
+            <button type="submit" className="btn btn-primary btn-full classic-auth-submit" disabled={loading}>
               {loading
-                ? <div className="dot-anim"><span/><span/><span/></div>
+                ? <span className="dot-anim" aria-label="Loading"><span/><span/><span/></span>
                 : mode === 'login' ? 'Sign in →' : 'Create account →'}
             </button>
           </form>
 
-          <p style={{ textAlign: 'center', fontSize: 13, color: 'var(--text3)', marginTop: 20 }}>
-            {mode === 'login' ? "New here?" : "Already have an account?"}{' '}
-            <span
-              style={{ color: 'var(--accent)', cursor: 'pointer', fontWeight: 600 }}
-              onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError('') }}
-            >
+          <p className="classic-auth-switch">
+            {mode === 'login' ? 'New here?' : 'Already have an account?'}{' '}
+            <button type="button" onClick={() => changeMode(mode === 'login' ? 'signup' : 'login')}>
               {mode === 'login' ? 'Create an account' : 'Sign in instead'}
-            </span>
+            </button>
           </p>
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
   )
 }

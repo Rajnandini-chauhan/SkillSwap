@@ -1,10 +1,8 @@
-// ═══════════════════════════════════════════════
-// SKILLSHARE – APP ROUTER
-// ═══════════════════════════════════════════════
-
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './lib/AuthContext'
 import { ToastProvider } from './lib/ToastContext'
+import { ThemeProvider } from './lib/ThemeContext'
+import ThemeToggle from './components/ThemeToggle'
 
 import LandingPage  from './pages/LandingPage'
 import AuthPage     from './pages/AuthPage'
@@ -23,9 +21,14 @@ function ProtectedRoute({ children }) {
   return children
 }
 
-export default function App() {
+function AppRoutes() {
+  const location = useLocation()
+  const isPublic = !location.pathname.startsWith('/app')
+
   return (
-    <AuthProvider>
+    <>
+      {isPublic && <div className="fixed right-4 top-4 z-[100]"><ThemeToggle compact /></div>}
+      <AuthProvider>
       <ToastProvider>
         <Routes>
           {/* Public */}
@@ -52,6 +55,15 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </ToastProvider>
-    </AuthProvider>
+      </AuthProvider>
+    </>
+  )
+}
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AppRoutes />
+    </ThemeProvider>
   )
 }

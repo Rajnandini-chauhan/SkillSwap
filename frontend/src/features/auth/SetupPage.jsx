@@ -1,7 +1,3 @@
-// ═══════════════════════════════════════════════
-// SKILLSHARE – SETUP PAGE (Onboarding)
-// 3-step profile setup after signup
-// ═══════════════════════════════════════════════
 
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'

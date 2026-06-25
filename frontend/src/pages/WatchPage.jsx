@@ -1,7 +1,4 @@
-// ═══════════════════════════════════════════════
-// SKILLSHARE – WATCH PAGE
-// Core feature: video + camera + notes + AI quiz
-// ═══════════════════════════════════════════════
+
 
 import { useState, useRef, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
