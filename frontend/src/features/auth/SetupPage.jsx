@@ -1,8 +1,12 @@
+// ═══════════════════════════════════════════════
+// SKILLSHARE – SETUP PAGE (Onboarding)
+// 3-step profile setup after signup
+// ═══════════════════════════════════════════════
 
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../../lib/AuthContext'
-import { SKILLS } from '../../lib/data'
+import { useAuth } from '../lib/AuthContext'
+import { SKILLS } from '../lib/data'
 
 const STEPS = ['Pick skills to learn', 'Pick skills to teach', "You're all set!"]
 
@@ -142,5 +146,3 @@ export default function SetupPage() {
     </div>
   )
 }
-
-

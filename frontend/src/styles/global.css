@@ -253,6 +253,27 @@ label {
 }
 .fade-in { animation: fadeInUp 0.35s ease forwards; }
 
+/* ── PAGE TRANSITION ── */
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-transition-root {
+  /* Sits transparent until JS kicks in (avoids FOUC on first load) */
+  will-change: opacity, transform;
+}
+
+.page-transition-root.page-enter {
+  animation: pageEnter 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 /* ── TOAST ── */
 .toast {
   position: fixed;

@@ -1,70 +1,57 @@
-// ═══════════════════════════════════════════════
-// SKILLSHARE – LEARN PAGE
-// Browse and search all courses
-// ═══════════════════════════════════════════════
-
 import { useState } from 'react'
-import { COURSES } from '../../lib/data'
-import CourseCard from '../../components/shared/CourseCard'
+import { COURSES } from '../lib/data'
+import CourseCard from '../components/CourseCard'
 
 const FILTERS = ['All', 'Python', 'React', 'Design', 'SQL', 'Machine Learning', 'JavaScript']
 
 export default function LearnPage() {
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('All')
-
-  const filtered = COURSES.filter(c => {
-    const matchesSearch =
-      !search ||
-      c.title.toLowerCase().includes(search.toLowerCase()) ||
-      c.channel.toLowerCase().includes(search.toLowerCase())
-    const matchesFilter = filter === 'All' || c.skill === filter
-    return matchesSearch && matchesFilter
+  const filtered = COURSES.filter(course => {
+    const term = search.trim().toLowerCase()
+    const matchesSearch = !term || course.title.toLowerCase().includes(term) || course.channel.toLowerCase().includes(term)
+    return matchesSearch && (filter === 'All' || course.skill === filter)
   })
 
   return (
-    <div>
-      <div style={{ padding: '28px 32px 0' }}>
-        <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.5px', marginBottom: 4 }}>Learn 📚</h1>
-        <p style={{ fontSize: 14, color: 'var(--text2)' }}>Curated YouTube courses with AI accountability</p>
-      </div>
+    <main className="page-wrap feature-page">
+      <header className="page-header">
+        <div className="min-w-0">
+          <p className="page-eyebrow">Learning library</p>
+          <h1 className="page-title">Explore lessons</h1>
+          <p className="page-subtitle">Find a focused course and learn at your own pace.</p>
+        </div>
+      </header>
 
-      <div style={{ padding: '24px 32px' }}>
-        {/* Search */}
-        <input
-          placeholder="🔍 Search courses..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          style={{ marginBottom: 16 }}
-        />
-
-        {/* Filter chips */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
-          {FILTERS.map(f => (
-            <div
-              key={f}
-              className={`skill-chip ${filter === f ? 'selected-learn' : ''}`}
-              onClick={() => setFilter(f)}
-            >
-              {f}
-            </div>
+      <section className="surface-card page-toolbar">
+        <div className="page-search">
+          <span aria-hidden="true">⌕</span>
+          <input aria-label="Search courses" placeholder="Search by course or creator" value={search} onChange={event => setSearch(event.target.value)} />
+        </div>
+        <div className="filter-row" aria-label="Course filters">
+          {FILTERS.map(item => (
+            <button key={item} type="button" onClick={() => setFilter(item)} className={`filter-chip ${filter === item ? 'filter-chip--active' : ''}`}>
+              {item}
+            </button>
           ))}
         </div>
+      </section>
 
-        {/* Course grid */}
-        {filtered.length > 0 ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))', gap: 16 }}>
-            {filtered.map(c => <CourseCard key={c.id} course={c} />)}
+      <section className="content-section">
+        <div className="section-heading">
+          <div>
+            <p className="section-label">Courses</p>
+            <h2 className="section-title">{filtered.length} available</h2>
+          </div>
+        </div>
+        {filtered.length ? (
+          <div className="course-grid">
+            {filtered.map(course => <CourseCard key={course.id} course={course} />)}
           </div>
         ) : (
-          <div style={{ textAlign: 'center', padding: 60, color: 'var(--text3)' }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>🔍</div>
-            <div>No courses found for "{search}"</div>
-          </div>
+          <div className="empty-state"><div className="empty-state__icon">⌕</div><h3>No courses found</h3><p>Try another search term or category.</p></div>
         )}
-      </div>
-    </div>
+      </section>
+    </main>
   )
 }
-
-

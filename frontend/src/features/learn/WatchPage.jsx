@@ -1,13 +1,9 @@
-// ═══════════════════════════════════════════════
-// SKILLSHARE – WATCH PAGE
-// Core feature: video + camera + notes + AI quiz
-// ═══════════════════════════════════════════════
+
 
 import { useState, useRef, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { COURSES, DEFAULT_CHECKLIST } from '../../lib/data'
-import { callGemini } from '../../lib/api'
-import { useToast } from "../../lib/ToastContext";
+import { COURSES, DEFAULT_CHECKLIST, callClaude } from '../lib/data'
+import { useToast } from '../lib/ToastContext'
 import styles from './WatchPage.module.css'
 
 // ── Sub-components ────────────────────────────
@@ -303,7 +299,7 @@ export default function WatchPage() {
       : `Based on these learning notes:\n\n"${notesText}"\n\nGenerate 7 more DIFFERENT, more challenging follow-up questions.\nPrevious questions already asked: ${prevQs}\n\nDo NOT repeat previous questions. Make these more advanced.\n\nRespond ONLY with valid JSON (no markdown, no backticks):\n{"questions":["q1","q2","q3","q4","q5","q6","q7"]}`
 
     try {
-      const text   = await callGemini(prompt, 1200)
+      const text   = await callClaude(prompt, 1200)
       const clean  = text.replace(/```json|```/g, '').trim()
       const parsed = JSON.parse(clean)
       if (withFeedback) setQuizFeedback(parsed.feedback || '')
@@ -353,7 +349,7 @@ export default function WatchPage() {
     const prompt = `Question: "${questions[index].text}"\n\nStudent's answer: "${answer}"\n\nProvide concise, encouraging feedback in 2-3 sentences. Point out what's correct, gently correct any misconceptions, and suggest one way to deepen understanding. Be conversational and supportive.`
 
     try {
-      const feedback = await callGemini(prompt, 400)
+      const feedback = await callClaude(prompt, 400)
       setQuestions(prev => prev.map((q, i) =>
         i === index ? { ...q, aiFeedback: feedback, loading: false } : q
       ))
@@ -491,5 +487,3 @@ export default function WatchPage() {
     </div>
   )
 }
-
-

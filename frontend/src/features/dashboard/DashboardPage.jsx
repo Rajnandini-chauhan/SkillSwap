@@ -1,139 +1,198 @@
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../../lib/AuthContext'
-import { COURSES } from '../../lib/data'
-import CourseCard from '../../components/shared/CourseCard'
+import { useAuth } from '../lib/AuthContext'
+import { COURSES, getGreeting } from '../lib/data'
+import {
+  FocusTomatoIllustration,
+  NotesIllustration,
+  TeachBotIllustration,
+  RainbowCloudIllustration,
+} from '../components/DashboardIllustrations'
 
-const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
+const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+function getCurrentWeekDates() {
+  const today = new Date()
+  const mondayOffset = (today.getDay() + 6) % 7
+  const monday = new Date(today)
+  monday.setDate(today.getDate() - mondayOffset)
+
+  return weekDays.map((_, index) => {
+    const date = new Date(monday)
+    date.setDate(monday.getDate() + index)
+    return date.getDate()
+  })
+}
+
+const quickActions = [
+  {
+    title: 'Focus session',
+    description: 'Start a distraction-free study block.',
+    button: 'Start focus',
+    path: '/app/watch/1',
+    tone: 'focus',
+    Illustration: FocusTomatoIllustration,
+  },
+  {
+    title: 'Teach a skill',
+    description: 'Create a lesson and share what you know.',
+    button: 'Start teaching',
+    path: '/app/teach',
+    tone: 'teach',
+    Illustration: TeachBotIllustration,
+  },
+  {
+    title: 'Find a partner',
+    description: 'Meet someone with complementary skills.',
+    button: 'Browse peers',
+    path: '/app/peers',
+    tone: 'match',
+    Illustration: RainbowCloudIllustration,
+  },
+]
 
 export default function DashboardPage() {
   const { user } = useAuth()
-  const navigate  = useNavigate()
-  const firstName = user?.name?.split(' ')[0] || 'there'
+  const navigate = useNavigate()
+  const firstName = user?.name?.split(' ')[0] || 'Learner'
+  const todayIndex = Math.max(0, Math.min(6, (new Date().getDay() + 6) % 7))
+  const weekDates = getCurrentWeekDates()
 
-  // Load progress from localStorage
-  const progress = (() => {
-    try { return JSON.parse(localStorage.getItem('skilldge_progress') || '{}') } catch { return {} }
-  })()
+  let storedProgress = {}
+  try {
+    storedProgress = JSON.parse(localStorage.getItem('skilldge_progress') || '{}')
+  } catch {
+    storedProgress = {}
+  }
 
-  const coursesWithProgress = COURSES.map(c => ({
-    ...c,
-    progress: progress[c.id] ?? c.progress,
+  const courses = COURSES.map(course => ({
+    ...course,
+    progress: storedProgress[course.id] ?? course.progress,
   }))
-
-  const inProgress = coursesWithProgress.filter(c => c.progress > 0 && c.progress < 100)
-  const suggested  = coursesWithProgress.filter(c => c.progress === 0)
-  const completed  = coursesWithProgress.filter(c => c.progress === 100)
-
-  const today = new Date().getDay()
-  const doneDays = [0,1,2,3,4].map(i => (today - 4 + i + 7) % 7)
-
-  const motivations = [
-    `You've been on a roll, ${firstName}. Keep it going.`,
-    `Every lesson counts. What are you learning today?`,
-    `${firstName}, consistency beats intensity. Show up today.`,
-    `Small steps, big results. You've got this.`,
-  ]
-  const motivation = motivations[new Date().getDay() % motivations.length]
+  const continueCourse = courses.find(course => course.progress > 0 && course.progress < 100) || courses[0]
+  const activeCount = courses.filter(course => course.progress > 0).length
+  const goalCount = Math.min(4, activeCount)
+  const weeklyProgress = Math.min(100, Math.max(20, goalCount * 25))
+  const skills = (user?.skillsLearn || []).slice(0, 4)
 
   return (
-    <div>
-      {/* ── Header ── */}
-      <div style={{
-        padding: '32px 36px 0',
-        borderBottom: '1.5px solid var(--border)',
-        paddingBottom: 28,
-        marginBottom: 28,
-        background: 'var(--card)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
-          <div>
-            <p style={{ fontSize: 13, color: 'var(--text3)', fontWeight: 600, marginBottom: 4, letterSpacing: '0.05em' }}>
-              DASHBOARD
-            </p>
-            <h1 style={{ fontSize: 28, letterSpacing: '-0.5px', marginBottom: 6 }}>
-              Welcome back, {firstName}.
-            </h1>
-            <p style={{ fontSize: 14, color: 'var(--text2)', fontStyle: 'italic' }}>
-              {motivation}
-            </p>
-          </div>
-          <button className="btn btn-primary" onClick={() => navigate('/app/learn')}>
-            Browse lessons →
-          </button>
+    <main className="dashboard-clean">
+      <section className="dashboard-clean__intro">
+        <div>
+          <p className="page-eyebrow">Your learning space</p>
+          <h1>Good {getGreeting()}, {firstName}.</h1>
+          <p>Choose one meaningful thing to work on today.</p>
         </div>
+      </section>
 
-        {/* Streak bar */}
-        <div style={{ marginTop: 24 }}>
-          <div style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 600, marginBottom: 10 }}>
-            THIS WEEK'S STREAK — {user?.streak || 0} days 🔥
+      <section className="dashboard-clean__top-grid">
+        <article className="dashboard-hero-card">
+          <div className="dashboard-hero-card__content">
+            <span className="feature-kicker">Continue where you left off</span>
+            <h2>{continueCourse.title}</h2>
+            <p>{continueCourse.channel}</p>
+
+            <div className="dashboard-hero-card__progress-row">
+              <div className="dashboard-progress-track" aria-label={`${continueCourse.progress}% complete`}>
+                <div style={{ width: `${continueCourse.progress}%` }} />
+              </div>
+              <strong>{continueCourse.progress}%</strong>
+            </div>
+
+            <div className="dashboard-hero-card__actions">
+              <button className="btn btn-primary" onClick={() => navigate(`/app/watch/${continueCourse.id}`)}>
+                Continue learning
+              </button>
+              <button className="btn btn-secondary" onClick={() => navigate('/app/learn')}>
+                Browse lessons
+              </button>
+            </div>
           </div>
-          <div style={{ display: 'flex', gap: 6 }}>
-            {DAYS.map((d, i) => {
-              const isDone = doneDays.includes(i)
-              const isToday = i === today - 1
+          <div className="dashboard-hero-card__art" aria-hidden="true">
+            <NotesIllustration />
+          </div>
+        </article>
+
+        <article className="dashboard-goal-card">
+          <div className="dashboard-goal-card__heading">
+            <div>
+              <p className="section-label">Weekly goal</p>
+              <h2>Learning rhythm</h2>
+            </div>
+            <strong>{goalCount}/4</strong>
+          </div>
+          <div className="dashboard-progress-track dashboard-progress-track--goal">
+            <div style={{ width: `${weeklyProgress}%` }} />
+          </div>
+          <p>Small, consistent sessions build stronger progress.</p>
+
+          <div className="dashboard-week-strip" aria-label="Current week">
+            {weekDays.map((day, index) => {
+              const active = index === todayIndex
               return (
-                <div key={d} style={{
-                  flex: 1, padding: '10px 0',
-                  borderRadius: 'var(--radius-sm)',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-                  background: isDone ? 'var(--accent)' : 'var(--bg2)',
-                  border: `1.5px solid ${isToday ? 'var(--accent)' : 'var(--border)'}`,
-                }}>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: isDone ? '#fff' : 'var(--text3)' }}>{d}</span>
-                  {isDone && <span style={{ fontSize: 12, color: '#fff' }}>✓</span>}
+                <div key={day} className={active ? 'is-active' : ''}>
+                  <span>{day}</span>
+                  <strong>{weekDates[index]}</strong>
                 </div>
               )
             })}
           </div>
-        </div>
-      </div>
+        </article>
+      </section>
 
-      <div style={{ padding: '0 36px 40px' }}>
-        {/* Stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 32 }}>
-          {[
-            { num: inProgress.length, label: 'In Progress', sub: 'lessons active', color: 'var(--accent)' },
-            { num: completed.length,  label: 'Completed',   sub: 'lessons done',   color: 'var(--accent3)' },
-            { num: user?.skillsTeach?.length || 0, label: 'Teaching', sub: 'skills shared', color: '#8B6B4A' },
-            { num: `${user?.xp || 0} XP`, label: 'Earned',  sub: 'keep learning',  color: '#5A7A8A' },
-          ].map(s => (
-            <div key={s.label} className="card card-sm" style={{ textAlign: 'center' }}>
-              <div style={{ fontFamily: 'Playfair Display, serif', fontSize: 24, fontWeight: 900, color: s.color }}>{s.num}</div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginTop: 2 }}>{s.label}</div>
-              <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{s.sub}</div>
-            </div>
+      <section className="dashboard-clean__section">
+        <div className="section-heading">
+          <div>
+            <p className="section-label">Quick access</p>
+            <h2 className="section-title">What would you like to do?</h2>
+          </div>
+        </div>
+
+        <div className="dashboard-quick-grid">
+          {quickActions.map(action => (
+            <article key={action.title} className={`dashboard-quick-card dashboard-quick-card--${action.tone}`}>
+              <div className="dashboard-quick-card__copy">
+                <h3>{action.title}</h3>
+                <p>{action.description}</p>
+                <button type="button" onClick={() => navigate(action.path)}>
+                  {action.button} <span aria-hidden="true">→</span>
+                </button>
+              </div>
+              <div className="dashboard-quick-card__art" aria-hidden="true">
+                <action.Illustration />
+              </div>
+            </article>
           ))}
         </div>
+      </section>
 
-        {/* Continue */}
-        {inProgress.length > 0 && (
-          <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h3 style={{ fontSize: 18 }}>Continue where you left off</h3>
-              <button className="btn btn-ghost btn-sm" onClick={() => navigate('/app/learn')} style={{ color: 'var(--accent)' }}>
-                See all →
-              </button>
+      <section className="dashboard-clean__bottom-grid">
+        <article className="dashboard-mini-card">
+          <div>
+            <p className="section-label">Current progress</p>
+            <h2>{continueCourse.title}</h2>
+            <p>{continueCourse.channel}</p>
+          </div>
+          <div className="dashboard-mini-card__footer">
+            <div className="dashboard-progress-track">
+              <div style={{ width: `${continueCourse.progress}%` }} />
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: 16, marginBottom: 36 }}>
-              {inProgress.map(c => <CourseCard key={c.id} course={c} />)}
-            </div>
-          </>
-        )}
+            <button type="button" onClick={() => navigate(`/app/watch/${continueCourse.id}`)}>Resume course →</button>
+          </div>
+        </article>
 
-        {/* Suggested */}
-        {suggested.length > 0 && (
-          <>
-            <h3 style={{ fontSize: 18, marginBottom: 16 }}>
-              {inProgress.length === 0 ? 'Start your first lesson' : 'Explore something new'}
-            </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: 16 }}>
-              {suggested.map(c => <CourseCard key={c.id} course={c} />)}
-            </div>
-          </>
-        )}
-      </div>
-    </div>
+        <article className="dashboard-mini-card">
+          <div>
+            <p className="section-label">Your skills</p>
+            <h2>Learning profile</h2>
+          </div>
+          <div className="dashboard-skill-list">
+            {skills.length
+              ? skills.map(skill => <span key={skill}>{skill}</span>)
+              : <p>Add skills from your profile.</p>}
+          </div>
+          <button type="button" onClick={() => navigate('/app/profile')}>Open profile →</button>
+        </article>
+      </section>
+    </main>
   )
 }
-
-
