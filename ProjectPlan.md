@@ -1077,4 +1077,15 @@ This is not another EdTech product. This is the infrastructure for human knowled
 
 #### Work Completed So Far :
 - [*] Basic Frontend Setup, with simple react, dummy data, and hardcoded links
+- [*] Updated the Backend, it now house the follwing :
+  -  User model with bcrypt password hashing
+  - JWT access token (15m) + refresh token (7d) in HTTP-only cookie
+  - Register, login, logout, refresh, getMe endpoints
+  - Email verification via Resend (dev override to project email)
+  - Resend verification endpoint
+  - Rate limiting on auth routes (5 req/15min)
+  - Input validation with express-validator
+  - Global error handler with ApiError
+  - asyncHandler wrapper
+  
   
