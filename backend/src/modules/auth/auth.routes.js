@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { registerRules, loginRules, validate } = require("./auth.validation");
-const { register, login, logout, getMe, refreshToken } = require("./auth.controller");
+const { register, login, logout, getMe, refreshToken, verifyEmail, resendVerification } = require("./auth.controller");
 const { protect } = require("../../middleware/auth.middleware");
 const rateLimit = require("express-rate-limit");
 
@@ -15,6 +15,8 @@ const authLimiter = rateLimit({
 router.post("/refresh", refreshToken);
 router.post("/register", authLimiter, registerRules, validate, register);
 router.post("/login", authLimiter, loginRules, validate, login);
+router.get("/verify-email/:token", verifyEmail);
+router.post("/resend-verification", resendVerification);
 
 // Protected routes
 router.post("/logout", protect, logout);

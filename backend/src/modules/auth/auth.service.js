@@ -1,15 +1,30 @@
+const crypto = require("crypto");
+const { sendVerificationEmail } = require("../../services/email.service");
 const User = require("./auth.model");
 const ApiError = require("../../utils/ApiError");
 const { generateAccessToken, generateRefreshToken, verifyRefreshToken } = require("../../utils/jwt");
 
 
 const registerUser = async ({ name, email, password }) => {
-  // Check if email already exists
   const existing = await User.findOne({ email });
   if (existing) throw new ApiError(409, "Email already registered");
 
-  // Create New User
-  const user = await User.create({ name, email, password });
+  // Generate verification token
+  const verificationToken = crypto.randomBytes(32).toString("hex");
+  const verificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+  const user = await User.create({
+    name,
+    email,
+    password,
+    verificationToken,
+    verificationTokenExpiry,
+  });
+
+  // Send verification email — don't await, don't block registration
+  sendVerificationEmail(email, name, verificationToken).catch((err) =>
+    console.error("Verification email failed:", err.message)
+  );
 
   return {
     _id: user._id,
@@ -27,6 +42,10 @@ const loginUser = async ({ email, password }) => {
   //  Compare password
   const isMatch = await user.isPasswordCorrect(password);
   if (!isMatch) throw new ApiError(401, "Invalid email or password");
+
+  if (!user.isVerified) {
+    throw new ApiError(403, "Please verify your email before logging in");
+  }
 
   //  Generate both tokens
   const accessToken = generateAccessToken(user._id);
@@ -78,4 +97,38 @@ const refreshAccessToken = async (incomingRefreshToken) => {
   return { accessToken };
 };
 
-module.exports = { registerUser, loginUser, logoutUser, getMe, refreshAccessToken };
+const verifyEmail = async (token) => {
+  const user = await User.findOne({ verificationToken: token }).select(
+    "+verificationToken +verificationTokenExpiry"
+  );
+
+  if (!user) throw new ApiError(400, "Invalid verification token");
+  if (user.verificationTokenExpiry < new Date()) {
+    throw new ApiError(400, "Verification token has expired");
+  }
+
+  user.isVerified = true;
+  user.verificationToken = undefined;
+  user.verificationTokenExpiry = undefined;
+  await user.save({ validateBeforeSave: false });
+};
+
+const resendVerification = async (email) => {
+  const user = await User.findOne({ email }).select(
+    "+verificationToken +verificationTokenExpiry"
+  );
+
+  // Always return success even if email not found — prevents email enumeration
+  if (!user || user.isVerified) return;
+
+  const verificationToken = crypto.randomBytes(32).toString("hex");
+  user.verificationToken = verificationToken;
+  user.verificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  await user.save({ validateBeforeSave: false });
+
+  sendVerificationEmail(user.email, user.name, verificationToken).catch((err) =>
+    console.error("Resend verification email failed:", err.message)
+  );
+};
+
+module.exports = { registerUser, loginUser, logoutUser, getMe, refreshAccessToken, verifyEmail, resendVerification };

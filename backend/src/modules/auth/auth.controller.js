@@ -67,4 +67,22 @@ const refreshToken = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { register, login, logout, getMe, refreshToken };
+const verifyEmail = asyncHandler(async (req, res) => {
+  await authService.verifyEmail(req.params.token);
+
+  res.status(200).json({
+    success: true,
+    message: "Email verified successfully. You can now log in.",
+  });
+});
+
+const resendVerification = asyncHandler(async (req, res) => {
+  await authService.resendVerification(req.body.email);
+
+  res.status(200).json({
+    success: true,
+    message: "If that email exists and is unverified, a new link has been sent.",
+  });
+});
+
+module.exports = { register, login, logout, getMe, refreshToken, verifyEmail, resendVerification };
