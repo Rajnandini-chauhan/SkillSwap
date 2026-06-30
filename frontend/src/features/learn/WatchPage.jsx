@@ -1,20 +1,82 @@
-import { useState, useRef, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { COURSES, DEFAULT_CHECKLIST, callClaude } from '../../lib/data'
+import { useEffect, useRef, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+
+import { COURSES, DEFAULT_CHECKLIST } from '../../lib/data'
+import { notesApi } from '../../lib/api'
 import { useToast } from '../../lib/ToastContext'
+
+import QuizPanel from './QuizPanel'
 import styles from './WatchPage.module.css'
 
-// ── Sub-components ────────────────────────────
+// ─────────────────────────────────────────────
+// Notes tab
+// ─────────────────────────────────────────────
 
-function NotesTab({ notes, onNotesChange, notesSubmitted, onSubmit, onReset }) {
+function NotesTab({
+  notes,
+  onNotesChange,
+  notesSubmitted,
+  onSubmit,
+  onReset,
+}) {
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef(null)
+  const { showToast } = useToast()
+
+  async function handlePdfChange(event) {
+    const file = event.target.files?.[0]
+
+    // Allows the same PDF to be selected again later.
+    event.target.value = ''
+
+    if (!file) return
+
+    if (file.type !== 'application/pdf') {
+      showToast('Please upload a PDF file')
+      return
+    }
+
+    setUploading(true)
+
+    try {
+      const { text } = await notesApi.extractPdf(file)
+
+      const combinedNotes = notes.trim()
+        ? `${notes.trim()}\n\n${text}`
+        : text
+
+      onNotesChange(combinedNotes)
+
+      showToast(
+        'PDF text extracted! Review it below before submitting.'
+      )
+    } catch (error) {
+      showToast(
+        error.message ||
+          'Could not extract text from this PDF'
+      )
+    } finally {
+      setUploading(false)
+    }
+  }
+
   if (notesSubmitted) {
     return (
       <div className={styles.tabContent}>
         <div className={styles.submittedBanner}>
-          ✅ Notes submitted! Head to the AI Quiz tab to start answering questions.
+          ✅ Notes submitted! Open the AI Quiz tab to
+          begin your five-question quiz.
         </div>
-        <div className={styles.notesPreview}>{notes}</div>
-        <button className="btn btn-secondary btn-sm btn-full" onClick={onReset}>
+
+        <div className={styles.notesPreview}>
+          {notes}
+        </div>
+
+        <button
+          type="button"
+          className="btn btn-secondary btn-sm btn-full"
+          onClick={onReset}
+        >
           ✏️ Rewrite Notes
         </button>
       </div>
@@ -24,156 +86,166 @@ function NotesTab({ notes, onNotesChange, notesSubmitted, onSubmit, onReset }) {
   return (
     <div className={styles.tabContent}>
       <div className={styles.notePrompt}>
-        📌 Watch the full video, then write everything you learned here. The more detail you give,
-        the better and more personalized your AI questions will be!
+        📌 Watch the full video, then write everything
+        you learned here. More detailed notes will help
+        Gemini create better quiz questions.
       </div>
+
       <textarea
-        placeholder={'I learned that...\n\nKey concepts:\n1.\n2.\n3.\n\nThings I found confusing:\n\nHow I would explain this to someone:'}
+        placeholder={
+          'I learned that...\n\n' +
+          'Key concepts:\n' +
+          '1.\n' +
+          '2.\n' +
+          '3.\n\n' +
+          'Things I found confusing:\n\n' +
+          'How I would explain this to someone:'
+        }
         value={notes}
-        onChange={e => onNotesChange(e.target.value)}
-        style={{ minHeight: 240, flex: 1 }}
+        onChange={(event) =>
+          onNotesChange(event.target.value)
+        }
+        style={{
+          minHeight: 240,
+          flex: 1,
+        }}
       />
-      <button className="btn btn-success btn-full" onClick={onSubmit}>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="application/pdf"
+        onChange={handlePdfChange}
+        style={{ display: 'none' }}
+      />
+
+      <button
+        type="button"
+        className="btn btn-secondary btn-sm btn-full"
+        onClick={() =>
+          fileInputRef.current?.click()
+        }
+        disabled={uploading}
+      >
+        {uploading
+          ? 'Extracting text…'
+          : '📄 Upload PDF instead'}
+      </button>
+
+      <button
+        type="button"
+        className="btn btn-success btn-full"
+        onClick={onSubmit}
+      >
         Submit Notes & Start AI Quiz 🤖
       </button>
     </div>
   )
 }
 
-// ── Question Block ──
-function QuestionBlock({ question, index, onSubmitAnswer }) {
-  const [draft, setDraft] = useState('')
+// ─────────────────────────────────────────────
+// Focus checklist tab
+// ─────────────────────────────────────────────
 
-  const isAnswered = !!question.answer
-
-  return (
-    <div className={styles.qBlock}>
-      <div className={styles.qHeader}>
-        <div className={styles.qNum}>{index + 1}</div>
-        <div className={styles.qText}>{question.text}</div>
-      </div>
-
-      {isAnswered ? (
-        <div className={styles.qSubmitted}>
-          <div className={styles.qUserAnswer}>{question.answer}</div>
-          {question.loading ? (
-            <div className={styles.qLoading}>
-              <div className="dot-anim">
-                <span /><span /><span />
-              </div>
-              <span>Claude is reviewing your answer...</span>
-            </div>
-          ) : question.aiFeedback ? (
-            <div className={styles.qAiFeedback}>{question.aiFeedback}</div>
-          ) : null}
-        </div>
-      ) : (
-        <div className={styles.qAnswerArea}>
-          <textarea
-            placeholder="Type your answer here... be as detailed as you want! There's no limit."
-            value={draft}
-            onChange={e => setDraft(e.target.value)}
-            style={{ minHeight: 90 }}
-          />
-          <button
-            className="btn btn-primary btn-sm"
-            onClick={() => { if (draft.trim()) { onSubmitAnswer(index, draft); setDraft('') } }}
-            disabled={!draft.trim()}
-          >
-            Submit Answer →
-          </button>
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ── AI Quiz Tab ──
-function QuizTab({ notesSubmitted, quizFeedback, questions, loadingMore, onSubmitAnswer, onLoadMore }) {
-  if (!notesSubmitted && questions.length === 0) {
-    return (
-      <div className={styles.tabContent} style={{ alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
-        <div style={{ fontSize: 44, marginBottom: 12 }}>🤖</div>
-        <p style={{ color: 'var(--text2)', fontSize: 13, lineHeight: 1.6 }}>
-          Submit your notes first to unlock the AI Quiz — answer as many questions as you want, and load more whenever you're ready.
-        </p>
-      </div>
-    )
-  }
-
-  return (
-    <div className={styles.tabContent}>
-      {quizFeedback && (
-        <div className={styles.quizIntro}>
-          <strong>🤖 Claude's Feedback on your notes</strong>
-          {quizFeedback}
-        </div>
-      )}
-
-      {questions.map((q, i) => (
-        <QuestionBlock key={i} question={q} index={i} onSubmitAnswer={onSubmitAnswer} />
-      ))}
-
-      {questions.length > 0 && (
-        <div
-          className={`${styles.loadMoreBtn} ${loadingMore ? styles.loadingMore : ''}`}
-          onClick={!loadingMore ? onLoadMore : undefined}
-        >
-          {loadingMore ? (
-            <div className="dot-anim" style={{ justifyContent: 'center' }}>
-              <span /><span /><span />
-            </div>
-          ) : '+ Load More Questions'}
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ── Focus Checklist Tab ──
 function FocusTab({ checklist, onToggle }) {
-  const done = checklist.filter(i => i.done).length
-  const pct  = Math.round((done / checklist.length) * 100)
+  const completedItems = checklist.filter(
+    (item) => item.done
+  ).length
+
+  const percentage =
+    checklist.length > 0
+      ? Math.round(
+          (completedItems / checklist.length) * 100
+        )
+      : 0
 
   return (
     <div className={styles.tabContent}>
       <div style={{ marginBottom: 12 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--text2)', marginBottom: 6 }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            marginBottom: 6,
+            fontSize: 12,
+            color: 'var(--text2)',
+          }}
+        >
           <span>Focus progress</span>
-          <span>{done}/{checklist.length}</span>
+
+          <span>
+            {completedItems}/{checklist.length}
+          </span>
         </div>
+
         <div className="progress-bar">
-          <div className="progress-fill" style={{ width: `${pct}%`, background: 'var(--accent3)' }} />
+          <div
+            className="progress-fill"
+            style={{
+              width: `${percentage}%`,
+              background: 'var(--accent3)',
+            }}
+          />
         </div>
       </div>
 
-      {checklist.map((item, i) => (
+      {checklist.map((item, index) => (
         <div
           key={item.id}
           style={{
-            display: 'flex', alignItems: 'center', gap: 10,
-            padding: 10, borderRadius: 'var(--radius-sm)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: 10,
+            borderRadius: 'var(--radius-sm)',
             opacity: item.done ? 0.6 : 1,
           }}
         >
-          <div
-            onClick={() => onToggle(i)}
+          <button
+            type="button"
+            aria-label={
+              item.done
+                ? 'Mark task incomplete'
+                : 'Mark task complete'
+            }
+            onClick={() => onToggle(index)}
             style={{
-              width: 20, height: 20, borderRadius: '50%',
-              border: `1.5px solid ${item.done ? 'var(--accent3)' : 'var(--border)'}`,
-              background: item.done ? 'var(--accent3)' : 'transparent',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', fontSize: 11, color: '#0a0a0f',
-              flexShrink: 0, transition: 'all 0.2s',
+              width: 20,
+              height: 20,
+              padding: 0,
+              borderRadius: '50%',
+              border: `1.5px solid ${
+                item.done
+                  ? 'var(--accent3)'
+                  : 'var(--border)'
+              }`,
+              background: item.done
+                ? 'var(--accent3)'
+                : 'transparent',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              fontSize: 11,
+              color: '#0a0a0f',
+              flexShrink: 0,
+              transition: 'all 0.2s',
             }}
           >
             {item.done ? '✓' : ''}
-          </div>
-          <span style={{
-            fontSize: 13,
-            textDecoration: item.done ? 'line-through' : 'none',
-            color: item.done ? 'var(--text3)' : 'var(--text)',
-          }}>
+          </button>
+
+          <span
+            style={{
+              fontSize: 13,
+              textDecoration: item.done
+                ? 'line-through'
+                : 'none',
+              color: item.done
+                ? 'var(--text3)'
+                : 'var(--text)',
+            }}
+          >
             {item.text}
           </span>
         </div>
@@ -182,217 +254,361 @@ function FocusTab({ checklist, onToggle }) {
   )
 }
 
-// ═══════════════════════════════════════════════
-// MAIN WATCH PAGE
-// ═══════════════════════════════════════════════
+// ─────────────────────────────────────────────
+// Local storage helpers
+// ─────────────────────────────────────────────
 
 function loadProgress() {
-  try { return JSON.parse(localStorage.getItem('skilldge_progress') || '{}') } catch { return {} }
-}
-function saveProgress(courseId, pct) {
   try {
-    const all = loadProgress()
-    all[courseId] = pct
-    localStorage.setItem('skilldge_progress', JSON.stringify(all))
-  } catch (error) { void error }
-}
-function loadNotes(courseId) {
-  try { return localStorage.getItem(`skilldge_notes_${courseId}`) || '' } catch { return '' }
-}
-function saveNotes(courseId, notes) {
-  try { localStorage.setItem(`skilldge_notes_${courseId}`, notes) } catch (error) { void error }
+    return JSON.parse(
+      localStorage.getItem('skilldge_progress') ||
+        '{}'
+    )
+  } catch {
+    return {}
+  }
 }
 
+function saveProgress(courseId, percentage) {
+  try {
+    const allProgress = loadProgress()
+
+    allProgress[courseId] = percentage
+
+    localStorage.setItem(
+      'skilldge_progress',
+      JSON.stringify(allProgress)
+    )
+  } catch (error) {
+    void error
+  }
+}
+
+function loadNotes(courseId) {
+  try {
+    return (
+      localStorage.getItem(
+        `skilldge_notes_${courseId}`
+      ) || ''
+    )
+  } catch {
+    return ''
+  }
+}
+
+function saveNotes(courseId, notes) {
+  try {
+    localStorage.setItem(
+      `skilldge_notes_${courseId}`,
+      notes
+    )
+  } catch (error) {
+    void error
+  }
+}
+
+function loadNotesSubmitted(courseId) {
+  try {
+    return (
+      localStorage.getItem(
+        `skilldge_notes_submitted_${courseId}`
+      ) === 'true'
+    )
+  } catch {
+    return false
+  }
+}
+
+function saveNotesSubmitted(
+  courseId,
+  submitted
+) {
+  try {
+    localStorage.setItem(
+      `skilldge_notes_submitted_${courseId}`,
+      String(submitted)
+    )
+  } catch (error) {
+    void error
+  }
+}
+
+function removeQuizSession(courseId) {
+  try {
+    localStorage.removeItem(
+      `quiz_session_${courseId}`
+    )
+  } catch (error) {
+    void error
+  }
+}
+
+// ─────────────────────────────────────────────
+// Main watch page
+// ─────────────────────────────────────────────
+
 export default function WatchPage() {
-  const { id }   = useParams()
+  const { id } = useParams()
   const navigate = useNavigate()
   const { showToast } = useToast()
 
-  const course = COURSES.find(c => c.id === Number(id))
-
-  const [activeTab, setActiveTab]   = useState('notes')
-  const [camOn, setCamOn]           = useState(false)
-  const [camStream, setCamStream]   = useState(null)
-  const [notes, setNotes]           = useState(() => loadNotes(id))
-  const [notesSubmitted, setNotesSubmitted] = useState(false)
-  const [quizFeedback, setQuizFeedback]     = useState('')
-  const [questions, setQuestions]   = useState([])
-  const [loadingMore, setLoadingMore] = useState(false)
-  const [checklist, setChecklist]   = useState(
-    DEFAULT_CHECKLIST.map(item => ({ ...item }))
+  const course = COURSES.find(
+    (item) => item.id === Number(id)
   )
+
+  const [activeTab, setActiveTab] =
+    useState('notes')
+
+  const [camOn, setCamOn] =
+    useState(false)
+
+  const [camStream, setCamStream] =
+    useState(null)
+
+  const [notes, setNotes] = useState(() =>
+    loadNotes(id)
+  )
+
+  const [
+    notesSubmitted,
+    setNotesSubmitted,
+  ] = useState(() => loadNotesSubmitted(id))
+
+  const [checklist, setChecklist] =
+    useState(() =>
+      DEFAULT_CHECKLIST.map((item) => ({
+        ...item,
+      }))
+    )
 
   const videoRef = useRef(null)
 
   useEffect(() => {
     return () => {
-      if (camStream) camStream.getTracks().forEach(t => t.stop())
+      if (camStream) {
+        camStream
+          .getTracks()
+          .forEach((track) => track.stop())
+      }
     }
   }, [camStream])
 
   if (!course) {
     return (
-      <div style={{ padding: 40, textAlign: 'center', color: 'var(--text2)' }}>
+      <div
+        style={{
+          padding: 40,
+          textAlign: 'center',
+          color: 'var(--text2)',
+        }}
+      >
         Course not found.{' '}
-        <span style={{ color: 'var(--accent)', cursor: 'pointer' }} onClick={() => navigate('/app/learn')}>
+
+        <button
+          type="button"
+          style={{
+            border: 'none',
+            background: 'transparent',
+            color: 'var(--accent)',
+            cursor: 'pointer',
+          }}
+          onClick={() =>
+            navigate('/app/learn')
+          }
+        >
           Go back
-        </span>
+        </button>
       </div>
     )
   }
 
-  // ── Camera ──
+  // ───────────────────────────────────────────
+  // Camera
+  // ───────────────────────────────────────────
+
   async function toggleCam() {
     if (camOn) {
-      if (camStream) camStream.getTracks().forEach(t => t.stop())
+      if (camStream) {
+        camStream
+          .getTracks()
+          .forEach((track) => track.stop())
+      }
+
       setCamStream(null)
       setCamOn(false)
+
       return
     }
+
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+      const stream =
+        await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false,
+        })
+
       setCamStream(stream)
       setCamOn(true)
-      setTimeout(() => {
-        if (videoRef.current) videoRef.current.srcObject = stream
+
+      window.setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream
+        }
       }, 100)
-      setChecklist(prev => prev.map(item => item.id === 2 ? { ...item, done: true } : item))
+
+      setChecklist((previous) =>
+        previous.map((item) =>
+          item.id === 2
+            ? { ...item, done: true }
+            : item
+        )
+      )
     } catch {
-      showToast('Camera permission denied. Please allow camera access in your browser.')
+      showToast(
+        'Camera permission denied. Please allow camera access in your browser.'
+      )
     }
   }
 
-  // Auto-save notes to localStorage
-  function handleNotesChange(val) {
-    setNotes(val)
-    saveNotes(id, val)
+  // ───────────────────────────────────────────
+  // Notes
+  // ───────────────────────────────────────────
+
+  function handleNotesChange(value) {
+    setNotes(value)
+    saveNotes(id, value)
   }
 
-  // ── Notes Submit ──
-  async function submitNotes() {
+  function submitNotes() {
     if (notes.trim().length < 20) {
-      showToast('Write a bit more about what you learned!')
+      showToast(
+        'Write a bit more about what you learned!'
+      )
+
       return
     }
+
     setNotesSubmitted(true)
+    saveNotesSubmitted(id, true)
+
     setActiveTab('quiz')
-    saveProgress(Number(id), 100)
-    setChecklist(prev => prev.map(item => item.id === 4 ? { ...item, done: true } : item))
-    await generateQuestions(notes, true)
+
+    setChecklist((previous) =>
+      previous.map((item) =>
+        item.id === 4
+          ? { ...item, done: true }
+          : item
+      )
+    )
   }
 
   function resetNotes() {
     setNotesSubmitted(false)
+    saveNotesSubmitted(id, false)
+
     setNotes('')
-    setQuestions([])
-    setQuizFeedback('')
+    saveNotes(id, '')
+
+    removeQuizSession(id)
+
     setActiveTab('notes')
+
+    setChecklist((previous) =>
+      previous.map((item) =>
+        item.id === 4 || item.id === 5
+          ? { ...item, done: false }
+          : item
+      )
+    )
   }
 
-  // ── AI Question Generation ──
-  async function generateQuestions(notesText, withFeedback) {
-    const prevQs = questions.map(q => q.text).join(' | ')
-    const prompt = withFeedback
-      ? `A student watched a video and wrote these notes:\n\n"${notesText}"\n\nRespond ONLY with valid JSON (no markdown, no backticks):\n{"feedback":"2-3 sentences of specific, encouraging feedback on the notes quality","questions":["q1","q2","q3","q4","q5","q6","q7"]}\n\nMake the 7 questions progressively deeper: start with recall/comprehension, move to application and analysis. Be specific to what they actually wrote.`
-      : `Based on these learning notes:\n\n"${notesText}"\n\nGenerate 7 more DIFFERENT, more challenging follow-up questions.\nPrevious questions already asked: ${prevQs}\n\nDo NOT repeat previous questions. Make these more advanced.\n\nRespond ONLY with valid JSON (no markdown, no backticks):\n{"questions":["q1","q2","q3","q4","q5","q6","q7"]}`
+  // ───────────────────────────────────────────
+  // Quiz completion
+  // ───────────────────────────────────────────
 
-    try {
-      const text   = await callClaude(prompt, 1200)
-      const clean  = text.replace(/```json|```/g, '').trim()
-      const parsed = JSON.parse(clean)
-      if (withFeedback) setQuizFeedback(parsed.feedback || '')
-      const newQs = (parsed.questions || []).map(q => ({
-        text: q, answer: '', aiFeedback: '', loading: false,
-      }))
-      setQuestions(prev => [...prev, ...newQs])
-    } catch {
-      if (withFeedback) {
-        setQuizFeedback('Great notes! Your effort to capture key concepts is clear. Here are your follow-up questions:')
-        setQuestions([
-          { text: 'In your own words, what is the single most important thing you learned?', answer: '', aiFeedback: '', loading: false },
-          { text: 'Can you give a real-world example of what you learned?', answer: '', aiFeedback: '', loading: false },
-          { text: 'What was the most confusing part? How would you explain it simply?', answer: '', aiFeedback: '', loading: false },
-          { text: 'How does this topic connect to something you already knew?', answer: '', aiFeedback: '', loading: false },
-          { text: 'What would happen if you applied this incorrectly?', answer: '', aiFeedback: '', loading: false },
-          { text: 'If you taught this to a beginner, what 3 steps would you use?', answer: '', aiFeedback: '', loading: false },
-          { text: 'What is one thing you want to explore further after this lesson?', answer: '', aiFeedback: '', loading: false },
-        ])
-      } else {
-        setQuestions(prev => [...prev,
-          { text: 'How would you apply this knowledge to solve a real problem?', answer: '', aiFeedback: '', loading: false },
-          { text: 'What are the limitations or edge cases of what you learned?', answer: '', aiFeedback: '', loading: false },
-          { text: 'Compare this to an alternative approach — what are the trade-offs?', answer: '', aiFeedback: '', loading: false },
-          { text: 'If you had to teach this tomorrow, what would your lesson plan be?', answer: '', aiFeedback: '', loading: false },
-          { text: 'What assumption in what you learned might not always hold?', answer: '', aiFeedback: '', loading: false },
-          { text: 'Describe a scenario where this knowledge could be misapplied.', answer: '', aiFeedback: '', loading: false },
-          { text: 'What is the most advanced concept you encountered? Explain simply.', answer: '', aiFeedback: '', loading: false },
-        ])
-      }
-    }
+  function handleQuizCompleted() {
+    saveProgress(Number(id), 100)
 
-    setLoadingMore(false)
+    setChecklist((previous) =>
+      previous.map((item) =>
+        item.id === 5
+          ? { ...item, done: true }
+          : item
+      )
+    )
+
+    showToast(
+      'Excellent! You completed all five quiz questions.'
+    )
   }
 
-  // ── Answer Submission ──
-  async function handleSubmitAnswer(index, answer) {
-    setQuestions(prev => prev.map((q, i) =>
-      i === index ? { ...q, answer, loading: true } : q
-    ))
+  // ───────────────────────────────────────────
+  // Focus checklist
+  // ───────────────────────────────────────────
 
-    const answeredCount = questions.filter(q => q.answer).length + 1
-    if (answeredCount >= 3) {
-      setChecklist(prev => prev.map(item => item.id === 5 ? { ...item, done: true } : item))
-    }
-
-    const prompt = `Question: "${questions[index].text}"\n\nStudent's answer: "${answer}"\n\nProvide concise, encouraging feedback in 2-3 sentences. Point out what's correct, gently correct any misconceptions, and suggest one way to deepen understanding. Be conversational and supportive.`
-
-    try {
-      const feedback = await callClaude(prompt, 400)
-      setQuestions(prev => prev.map((q, i) =>
-        i === index ? { ...q, aiFeedback: feedback, loading: false } : q
-      ))
-    } catch {
-      setQuestions(prev => prev.map((q, i) =>
-        i === index ? { ...q, aiFeedback: 'Great effort! Your understanding is developing well. Keep practicing this topic.', loading: false } : q
-      ))
-    }
+  function toggleCheckItem(index) {
+    setChecklist((previous) =>
+      previous.map((item, itemIndex) =>
+        itemIndex === index
+          ? {
+              ...item,
+              done: !item.done,
+            }
+          : item
+      )
+    )
   }
 
-  async function loadMoreQuestions() {
-    if (loadingMore) return
-    setLoadingMore(true)
-    await generateQuestions(notes, false)
-  }
-
-  function toggleCheckItem(i) {
-    setChecklist(prev => prev.map((item, idx) =>
-      idx === i ? { ...item, done: !item.done } : item
-    ))
-  }
-
-  const TABS = [
-    { id: 'notes',    label: '📝 Notes' },
-    { id: 'quiz',     label: '🤖 AI Quiz' },
-    { id: 'focus',    label: '✅ Focus' },
+  const tabs = [
+    {
+      id: 'notes',
+      label: '📝 Notes',
+    },
+    {
+      id: 'quiz',
+      label: '🤖 AI Quiz',
+    },
+    {
+      id: 'focus',
+      label: '✅ Focus',
+    },
   ]
 
   return (
     <div className={styles.layout}>
-      {/* ══ LEFT: VIDEO PANEL ══ */}
+      {/* Left video panel */}
       <div className={styles.videoPanel}>
-        {/* Top bar */}
         <div className={styles.topBar}>
-          <button className="btn btn-secondary btn-sm" onClick={() => navigate('/app/learn')}>← Back</button>
-          <h2 className={styles.courseTitle}>{course.title}</h2>
           <button
-            className={`btn btn-sm ${camOn ? 'btn-danger' : 'btn-primary'}`}
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={() =>
+              navigate('/app/learn')
+            }
+          >
+            ← Back
+          </button>
+
+          <h2 className={styles.courseTitle}>
+            {course.title}
+          </h2>
+
+          <button
+            type="button"
+            className={`btn btn-sm ${
+              camOn
+                ? 'btn-danger'
+                : 'btn-primary'
+            }`}
             onClick={toggleCam}
           >
-            {camOn ? '📹 Camera On' : '📷 Enable Camera'}
+            {camOn
+              ? '📹 Camera On'
+              : '📷 Enable Camera'}
           </button>
         </div>
 
-        {/* Video + Camera */}
+        {/* Video and camera */}
         <div className={styles.videoWrapper}>
           <iframe
             src={`https://www.youtube.com/embed/${course.ytId}?rel=0`}
@@ -402,63 +618,131 @@ export default function WatchPage() {
             className={styles.iframe}
           />
 
-          {/* Camera overlay */}
-          <div className={styles.camOverlay} onClick={toggleCam} title="Click to toggle camera">
+          <button
+            type="button"
+            className={styles.camOverlay}
+            onClick={toggleCam}
+            title="Click to toggle camera"
+            aria-label={
+              camOn
+                ? 'Turn camera off'
+                : 'Turn camera on'
+            }
+          >
             {camOn ? (
               <>
                 <video
                   ref={videoRef}
-                  autoPlay muted playsInline
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)' }}
+                  autoPlay
+                  muted
+                  playsInline
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    transform: 'scaleX(-1)',
+                  }}
                 />
-                <div className={styles.camDot} />
+
+                <span
+                  className={styles.camDot}
+                />
               </>
             ) : (
-              <div className={styles.camPlaceholder}>
-                <span style={{ fontSize: 22 }}>📷</span>
+              <span
+                className={
+                  styles.camPlaceholder
+                }
+              >
+                <span
+                  style={{
+                    fontSize: 22,
+                  }}
+                >
+                  📷
+                </span>
+
                 <span>Camera Off</span>
-              </div>
+              </span>
             )}
-          </div>
+          </button>
         </div>
 
-        {/* Info box */}
-        <div style={{
-          background: 'var(--bg2)', borderRadius: 'var(--radius)',
-          padding: 16, border: '1px solid var(--border)',
-        }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text2)', marginBottom: 6 }}>HOW IT WORKS</div>
-          <p style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.6 }}>
-            1. Watch the video with your camera on for accountability.<br />
-            2. Write detailed notes about what you learned.<br />
-            3. Submit notes → Claude gives you 7+ AI questions.<br />
-            4. Answer each question and get personal feedback.<br />
-            5. Load more questions anytime — keep going until you truly master it!
+        {/* Information panel */}
+        <div
+          style={{
+            padding: 16,
+            background: 'var(--bg2)',
+            border:
+              '1px solid var(--border)',
+            borderRadius: 'var(--radius)',
+          }}
+        >
+          <div
+            style={{
+              marginBottom: 6,
+              fontSize: 12,
+              fontWeight: 700,
+              color: 'var(--text2)',
+            }}
+          >
+            HOW IT WORKS
+          </div>
+
+          <p
+            style={{
+              fontSize: 13,
+              lineHeight: 1.6,
+              color: 'var(--text2)',
+            }}
+          >
+            1. Watch the video with your camera on
+            for accountability.
+            <br />
+
+            2. Write detailed notes about what you
+            learned.
+            <br />
+
+            3. Submit your notes and start a
+            five-question Gemini quiz.
+            <br />
+
+            4. Answer one question at a time and
+            receive feedback.
+            <br />
+
+            5. Answer all five correctly to unlock
+            deeper follow-up questions.
           </p>
         </div>
       </div>
 
-      {/* ══ RIGHT: SIDEBAR ══ */}
+      {/* Right sidebar */}
       <div className={styles.sidebar}>
-        {/* Course name */}
         <div className={styles.sidebarHeader}>
           {course.title.split('–')[0].trim()}
         </div>
 
-        {/* Tabs */}
         <div className={styles.tabs}>
-          {TABS.map(t => (
-            <div
-              key={t.id}
-              className={`${styles.tab} ${activeTab === t.id ? styles.tabActive : ''}`}
-              onClick={() => setActiveTab(t.id)}
+          {tabs.map((tab) => (
+            <button
+              type="button"
+              key={tab.id}
+              className={`${styles.tab} ${
+                activeTab === tab.id
+                  ? styles.tabActive
+                  : ''
+              }`}
+              onClick={() =>
+                setActiveTab(tab.id)
+              }
             >
-              {t.label}
-            </div>
+              {tab.label}
+            </button>
           ))}
         </div>
 
-        {/* Tab bodies */}
         {activeTab === 'notes' && (
           <NotesTab
             notes={notes}
@@ -468,18 +752,23 @@ export default function WatchPage() {
             onReset={resetNotes}
           />
         )}
+
         {activeTab === 'quiz' && (
-          <QuizTab
+          <QuizPanel
+            notes={notes}
             notesSubmitted={notesSubmitted}
-            quizFeedback={quizFeedback}
-            questions={questions}
-            loadingMore={loadingMore}
-            onSubmitAnswer={handleSubmitAnswer}
-            onLoadMore={loadMoreQuestions}
+            courseId={id}
+            onQuizCompleted={
+              handleQuizCompleted
+            }
           />
         )}
+
         {activeTab === 'focus' && (
-          <FocusTab checklist={checklist} onToggle={toggleCheckItem} />
+          <FocusTab
+            checklist={checklist}
+            onToggle={toggleCheckItem}
+          />
         )}
       </div>
     </div>
