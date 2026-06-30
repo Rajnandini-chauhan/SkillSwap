@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { COURSES } from '../lib/data'
-import CourseCard from '../components/CourseCard'
+import { COURSES } from '../../lib/data'
+import CourseCard from '../../components/shared/CourseCard'
 
 const FILTERS = ['All', 'Python', 'React', 'Design', 'SQL', 'Machine Learning', 'JavaScript']
 

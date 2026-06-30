@@ -1,19 +1,9 @@
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { useAuth } from '../lib/AuthContext'
-import ThemeToggle from '../components/ThemeToggle'
-import { NotesIllustration, RainbowCloudIllustration } from '../components/DashboardIllustrations'
-
-const AVATAR_COLORS = ['#C4603A', '#3D7A5C', '#8B6B4A', '#5A7A8A', '#7A5A8A', '#8A7A3A']
-
-function getInitials(name) {
-  return name.trim().split(' ').map(word => word[0]).join('').toUpperCase().slice(0, 2)
-}
-
-function pickColor(name) {
-  const index = name.charCodeAt(0) % AVATAR_COLORS.length
-  return AVATAR_COLORS[index]
-}
+import { useAuth } from '../../lib/AuthContext'
+import { authApi } from '../../lib/api'
+import ThemeToggle from '../../components/ThemeToggle'
+import { NotesIllustration, RainbowCloudIllustration } from '../../components/DashboardIllustrations'
 
 export default function AuthPage() {
   const [params] = useSearchParams()
@@ -23,13 +13,17 @@ export default function AuthPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [needsVerification, setNeedsVerification] = useState(false)
+  const [justRegistered, setJustRegistered] = useState(false)
+  const [resendStatus, setResendStatus] = useState('') // '' | 'sending' | 'sent'
 
-  const { login } = useAuth()
+  const { login, register } = useAuth()
   const navigate = useNavigate()
 
   async function handleSubmit(event) {
     event.preventDefault()
     setError('')
+    setNeedsVerification(false)
 
     if (!email.trim() || !password.trim()) {
       setError('Please fill in all fields.')
@@ -45,39 +39,82 @@ export default function AuthPage() {
     }
 
     setLoading(true)
-    await new Promise(resolve => setTimeout(resolve, 600))
+    try {
+      if (mode === 'signup') {
+        await register({ name: name.trim(), email: email.trim().toLowerCase(), password })
+        setJustRegistered(true)
+      } else {
+        const loggedInUser = await login({ email: email.trim().toLowerCase(), password })
+        navigate(loggedInUser.isProfileComplete ? '/app/dashboard' : '/setup')
+      }
+    } catch (submitError) {
+      if (submitError.status === 403) {
+        // Account exists but email isn't verified yet
+        setNeedsVerification(true)
+        setError(submitError.message)
+      } else {
+        setError(submitError.message || 'Something went wrong. Please try again.')
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
 
-    const displayName = mode === 'signup'
-      ? name.trim()
-      : (() => {
-          try {
-            const existing = localStorage.getItem('skilldge_user')
-            if (existing) return JSON.parse(existing).name
-          } catch (storageError) {
-            void storageError
-          }
-          return email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, letter => letter.toUpperCase())
-        })()
-
-    login({
-      name: displayName,
-      email: email.trim().toLowerCase(),
-      avatar: getInitials(displayName),
-      color: pickColor(displayName),
-      skillsLearn: [],
-      skillsTeach: [],
-      streak: 0,
-      xp: 0,
-      joinedAt: new Date().toISOString(),
-    })
-
-    setLoading(false)
-    navigate(mode === 'signup' ? '/setup' : '/app/dashboard')
+  async function handleResend() {
+    setResendStatus('sending')
+    try {
+      await authApi.resendVerification(email.trim().toLowerCase())
+      setResendStatus('sent')
+    } catch {
+      setResendStatus('')
+    }
   }
 
   function changeMode(nextMode) {
     setMode(nextMode)
     setError('')
+    setNeedsVerification(false)
+    setJustRegistered(false)
+    setResendStatus('')
+  }
+
+  // After signup, show a "check your inbox" screen instead of the form —
+  // the backend requires email verification before the first login.
+  if (justRegistered) {
+    return (
+      <main className="classic-auth-page">
+        <section className="classic-auth-form-panel" style={{ margin: '0 auto' }}>
+          <div className="classic-auth-theme"><ThemeToggle compact /></div>
+          <div className="classic-auth-form-wrap">
+            <button type="button" className="classic-auth-mobile-brand" onClick={() => navigate('/')} aria-label="Go to SkillSwap home">
+              <span className="classic-auth-brand-mark">✦</span>
+              <span>SkillSwap</span>
+            </button>
+
+            <h2>Check your inbox</h2>
+            <p className="classic-auth-subtitle">
+              We sent a verification link to <strong>{email.trim()}</strong>. Click it to activate your account, then come back and sign in.
+            </p>
+
+            <button
+              type="button"
+              className="btn btn-primary btn-full classic-auth-submit"
+              style={{ marginTop: '1.5rem' }}
+              onClick={() => changeMode('login')}
+            >
+              Back to sign in
+            </button>
+
+            <p className="classic-auth-switch" style={{ marginTop: '1rem' }}>
+              Didn't get it?{' '}
+              <button type="button" onClick={handleResend} disabled={resendStatus === 'sending'}>
+                {resendStatus === 'sent' ? 'Sent again ✓' : resendStatus === 'sending' ? 'Sending…' : 'Resend email'}
+              </button>
+            </p>
+          </div>
+        </section>
+      </main>
+    )
   }
 
   return (
@@ -194,7 +231,19 @@ export default function AuthPage() {
               />
             </div>
 
-            {error && <div className="classic-auth-error" role="alert">{error}</div>}
+            {error && (
+              <div className="classic-auth-error" role="alert">
+                {error}
+                {needsVerification && (
+                  <>
+                    {' '}
+                    <button type="button" onClick={handleResend} disabled={resendStatus === 'sending'} style={{ textDecoration: 'underline' }}>
+                      {resendStatus === 'sent' ? 'Sent ✓' : resendStatus === 'sending' ? 'Sending…' : 'Resend verification email'}
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
 
             <button type="submit" className="btn btn-primary btn-full classic-auth-submit" disabled={loading}>
               {loading

@@ -1,31 +1,53 @@
 import { createContext, useContext, useState, useEffect } from 'react'
+import { authApi } from './api'
 
 const AuthContext = createContext(null)
-const STORAGE_KEY = 'skilldge_user'
-
-function loadUser() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? JSON.parse(raw) : null
-  } catch { return null }
-}
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(loadUser)
+  const [user, setUser] = useState(null)
+  // checkingSession is true only during the initial silent-restore attempt
+  // on app load — used to avoid flashing the /auth page before we know.
+  const [checkingSession, setCheckingSession] = useState(true)
 
   useEffect(() => {
-    try {
-      if (user) localStorage.setItem(STORAGE_KEY, JSON.stringify(user))
-      else localStorage.removeItem(STORAGE_KEY)
-    } catch (error) { void error }
-  }, [user])
+    authApi.restoreSession()
+      .then(restoredUser => setUser(restoredUser))
+      .finally(() => setCheckingSession(false))
+  }, [])
 
-  function login(userData) { setUser(userData) }
-  function logout() { setUser(null); localStorage.removeItem(STORAGE_KEY) }
-  function updateUser(updates) { setUser(prev => ({ ...prev, ...updates })) }
+  async function login(credentials) {
+    const loggedInUser = await authApi.login(credentials)
+    setUser(loggedInUser)
+    return loggedInUser
+  }
+
+  async function register(details) {
+    return authApi.register(details)
+  }
+
+  async function logout() {
+    await authApi.logout()
+    setUser(null)
+  }
+
+  function updateUser(updates) {
+    setUser(prev => ({ ...prev, ...updates }))
+  }
+
+  // Called by VerifyEmailPage after a successful token verification, so the
+  // user doesn't have to manually log in right after verifying.
+  async function refreshUser() {
+    try {
+      const refreshedUser = await authApi.getMe()
+      setUser(refreshedUser)
+      return refreshedUser
+    } catch {
+      return null
+    }
+  }
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, checkingSession, login, register, logout, updateUser, refreshUser }}>
       {children}
     </AuthContext.Provider>
   )

@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { PEERS } from '../lib/data'
-import { useAuth } from '../lib/AuthContext'
-import { useToast } from '../lib/ToastContext'
+import { PEERS } from '../../lib/data'
+import { useAuth } from '../../lib/AuthContext'
+import { useToast } from '../../lib/ToastContext'
 
 export default function PeersPage() {
   const { user } = useAuth()

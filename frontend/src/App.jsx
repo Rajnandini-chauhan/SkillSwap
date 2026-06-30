@@ -8,6 +8,7 @@ import PageTransition from './components/PageTransition'
 import LandingPage   from './components/LandingPage'
 import AuthPage      from './features/auth/AuthPage'
 import SetupPage     from './features/auth/SetupPage'
+import VerifyEmailPage from './features/auth/VerifyEmailPage'
 import DashboardPage from './features/dashboard/DashboardPage'
 import LearnPage     from './features/learn/LearnPage'
 import WatchPage     from './features/learn/WatchPage'
@@ -18,7 +19,8 @@ import AppShell      from './components/AppShell'
 
 // ProtectedRoute must live inside AuthProvider — fixed placement below.
 function ProtectedRoute({ children }) {
-  const { user } = useAuth()
+  const { user, checkingSession } = useAuth()
+  if (checkingSession) return null // or a loading spinner
   if (!user) return <Navigate to="/auth" replace />
   return children
 }
@@ -41,6 +43,7 @@ function AppRoutes() {
         <Route path="/"     element={<PageTransition><LandingPage /></PageTransition>} />
         <Route path="/auth" element={<PageTransition><AuthPage /></PageTransition>} />
         <Route path="/setup" element={<PageTransition><SetupPage /></PageTransition>} />
+        <Route path="/verify-email" element={<PageTransition><VerifyEmailPage /></PageTransition>} />
 
         {/* Protected – wrapped in sidebar shell */}
         <Route path="/app" element={

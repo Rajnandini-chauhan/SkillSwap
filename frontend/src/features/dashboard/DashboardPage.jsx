@@ -1,12 +1,12 @@
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../lib/AuthContext'
-import { COURSES, getGreeting } from '../lib/data'
+import { useAuth } from '../../lib/AuthContext'
+import { COURSES, getGreeting } from '../../lib/data'
 import {
   FocusTomatoIllustration,
   NotesIllustration,
   TeachBotIllustration,
   RainbowCloudIllustration,
-} from '../components/DashboardIllustrations'
+} from '../../components/DashboardIllustrations'
 
 const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 

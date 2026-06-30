@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { useAuth } from '../lib/AuthContext'
-import { useToast } from '../lib/ToastContext'
-import { COURSES, SKILLS } from '../lib/data'
+import { useAuth } from '../../lib/AuthContext'
+import { useToast } from '../../lib/ToastContext'
+import { COURSES, SKILLS } from '../../lib/data'
 
 export default function ProfilePage() {
   const { user, updateUser } = useAuth()

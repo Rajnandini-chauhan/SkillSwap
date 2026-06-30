@@ -1,9 +1,7 @@
-
-
 import { useState, useRef, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { COURSES, DEFAULT_CHECKLIST, callClaude } from '../lib/data'
-import { useToast } from '../lib/ToastContext'
+import { COURSES, DEFAULT_CHECKLIST, callClaude } from '../../lib/data'
+import { useToast } from '../../lib/ToastContext'
 import styles from './WatchPage.module.css'
 
 // ── Sub-components ────────────────────────────

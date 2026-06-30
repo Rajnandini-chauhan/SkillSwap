@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { useAuth } from '../lib/AuthContext'
-import { useToast } from '../lib/ToastContext'
+import { useAuth } from '../../lib/AuthContext'
+import { useToast } from '../../lib/ToastContext'
 
 export default function TeachPage() {
   const { user } = useAuth()
