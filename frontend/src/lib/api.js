@@ -82,9 +82,15 @@ async function request(path, options = {}) {
       setAccessToken(data.accessToken)
 
       return await rawRequest(path, options)
-    } catch {
+
+    } catch (refreshError) {
+
       setAccessToken(null)
-      throw error
+
+      // Redirect user to login
+      window.location.replace('/login')
+
+      return;
     }
   }
 }

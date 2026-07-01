@@ -1,6 +1,7 @@
 // JsonWebToken, generate and Refresh functions
 
 const jwt = require("jsonwebtoken");
+const ApiError = require("./ApiError");
 const { JWT_ACCESS_SECRET, JWT_REFRESH_SECRET } = require("../config/env");
 
 const generateAccessToken = (userId) => {
@@ -20,11 +21,33 @@ const generateRefreshToken = (userId) => {
 };
 
 const verifyAccessToken = (token) => {
-  return jwt.verify(token, JWT_ACCESS_SECRET);
+  try {
+    return jwt.verify(token, JWT_ACCESS_SECRET);
+  } catch (err) {
+    if (
+      err instanceof jwt.TokenExpiredError ||
+      err instanceof jwt.JsonWebTokenError
+    ) {
+      throw new ApiError(401, "Access token expired");
+    }
+
+    throw err;
+  }
 };
 
 const verifyRefreshToken = (token) => {
-  return jwt.verify(token, JWT_REFRESH_SECRET);
+  try {
+    return jwt.verify(token, JWT_REFRESH_SECRET);
+  } catch (err) {
+    if (
+      err instanceof jwt.TokenExpiredError ||
+      err instanceof jwt.JsonWebTokenError
+    ) {
+      throw new ApiError(401, "Invalid or expired refresh token");
+    }
+
+    throw err;
+  }
 };
 
 module.exports = {
