@@ -10,6 +10,7 @@ const app = express();
 const authRoutes = require("./modules/auth/auth.routes");
 const notesRoutes = require("./modules/notes/notes.routes");
 const quizRoutes = require("./modules/quiz/quiz.routes");
+const userRoutes = require("./modules/users/user.routes");
 
 // Security & parsing middleware
 app.use(helmet());
@@ -39,6 +40,7 @@ app.get("/api/health", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/notes", notesRoutes);
 app.use("/api/quiz", quizRoutes);
+app.use("/api/users", userRoutes);
 
 // Error middleware
 app.use((err, req, res, next) => {
