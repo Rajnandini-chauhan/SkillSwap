@@ -11,6 +11,7 @@ const authRoutes = require("./modules/auth/auth.routes");
 const notesRoutes = require("./modules/notes/notes.routes");
 const quizRoutes = require("./modules/quiz/quiz.routes");
 const userRoutes = require("./modules/users/user.routes");
+const sessionRoutes = require("./modules/sessions/session.routes");
 
 // Security & parsing middleware
 app.use(helmet());
@@ -41,6 +42,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/notes", notesRoutes);
 app.use("/api/quiz", quizRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/sessions", sessionRoutes);
 
 // Error middleware
 app.use((err, req, res, next) => {
