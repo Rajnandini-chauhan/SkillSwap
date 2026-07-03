@@ -1,6 +1,8 @@
 const { PDFParse } = require("pdf-parse");
 const ApiError = require("../../utils/ApiError");
 
+const Note = require("./notes.model");
+
 // Extracts plain text from a PDF file buffer.
 // NOTE: this only handles text-based PDFs for now.
 // Scanned/image-only PDFs will return little or no text — OCR (tesseract.js)
@@ -38,4 +40,16 @@ async function extractTextFromPdf(buffer) {
   return { text, numPages: result.total ?? result.pages?.length ?? null };
 }
 
-module.exports = { extractTextFromPdf };
+// save user notes, 1 notes per user, per course session
+const saveNote = async (userId, courseId, content, source = "typed") => {
+  // upsert — update if exists, create if not
+  const note = await Note.findOneAndUpdate(
+    { user: userId, courseId },
+    { content, source },
+    { upsert: true, new: true }
+  );
+  return note;
+};
+
+
+module.exports = { extractTextFromPdf, saveNote };

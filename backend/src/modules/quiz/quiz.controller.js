@@ -1,5 +1,8 @@
 const mongoose = require("mongoose");
 
+// session model
+const Session = require("../sessions/session.model"); 
+
 const QuizSession = require("./quiz.model");
 const {
   generateBasicQuestions,
@@ -262,6 +265,34 @@ const submitAnswer = asyncHandler(
         session.stage = "basic_completed";
         session.completedAt = new Date();
         basicQuizCompleted = true;
+
+        // Award XP — find active session for this course and end it
+        const activeSession = await Session.findOne({
+          user: req.user._id,
+          courseId: session.courseId,
+          endTime: null,
+        });
+
+        if (activeSession) {
+          const durationMinutes = Math.floor(
+            (new Date() - activeSession.startTime) / (1000 * 60)
+          );
+          const xpEarned = 10 + Math.floor(durationMinutes / 30) * 5;
+
+          activeSession.endTime = new Date();
+          activeSession.duration = durationMinutes;
+          activeSession.completed = true;
+          activeSession.xpEarned = xpEarned;
+          await activeSession.save();
+
+          // Update user XP
+          const User = require("../auth/auth.model");
+          const user = await User.findById(req.user._id);
+          user.xp += xpEarned;
+          user.lastActiveDate = new Date();
+          if (user.streak === 0) user.streak = 1;
+          await user.save({ validateBeforeSave: false });
+        }
       } else {
         session.currentBasicIndex += 1;
 
