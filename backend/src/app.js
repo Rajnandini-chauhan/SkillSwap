@@ -12,6 +12,7 @@ const notesRoutes = require("./modules/notes/notes.routes");
 const quizRoutes = require("./modules/quiz/quiz.routes");
 const userRoutes = require("./modules/users/user.routes");
 const sessionRoutes = require("./modules/sessions/session.routes");
+const reflectionRoutes = require("./modules/reflections/reflection.routes");
 
 // Security & parsing middleware
 app.use(helmet());
@@ -43,6 +44,7 @@ app.use("/api/notes", notesRoutes);
 app.use("/api/quiz", quizRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/sessions", sessionRoutes);
+app.use("/api/reflections", reflectionRoutes);
 
 // Error middleware
 app.use((err, req, res, next) => {
