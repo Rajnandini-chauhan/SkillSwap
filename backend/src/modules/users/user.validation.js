@@ -1,5 +1,5 @@
 const { body } = require("express-validator");
-const { validate } = require("../auth/auth.validation");
+const validate = require("../../utils/validate");
 
 const setupProfileRules = [
   body("bio")

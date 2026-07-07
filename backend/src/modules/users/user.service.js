@@ -3,7 +3,7 @@ const ApiError = require("../../utils/ApiError");
 
 const setupProfile = async (userId, { bio, skillsTeach, skillsLearn }) => {
   const user = await User.findById(userId);
-  if (!user) throw new ApiError(404, "User not found");
+  if (!user) throw ApiError.from("USER_NOT_FOUND");
 
   // Only update fields that were actually sent
   if (bio !== undefined) user.bio = bio;
@@ -24,7 +24,7 @@ const getUserById = async (userId) => {
   const user = await User.findById(userId).select(
     "name avatar bio skillsTeach skillsLearn xp streak isProfileComplete createdAt"
   );
-  if (!user) throw new ApiError(404, "User not found");
+  if (!user) throw ApiError.from("USER_NOT_FOUND");
   return user;
 };
 

@@ -8,13 +8,15 @@ const {
   updateReflection,
   deleteReflection,
 } = require("./reflection.controller");
+const { createReflectionRules, updateReflectionRules, validate } = require("./reflection.validation");
+
 
 router.use(protect); // all reflection routes are protected
 
-router.post("/", createReflection);
+router.post("/", createReflectionRules, validate, createReflection);
 router.get("/my", getMyReflections);
 router.get("/:id", getReflectionById);
-router.patch("/:id", updateReflection);
+router.patch("/:id", updateReflectionRules, validate, updateReflection);
 router.delete("/:id", deleteReflection);
 
 module.exports = router;

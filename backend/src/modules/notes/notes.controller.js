@@ -6,9 +6,7 @@ const { extractTextFromPdf, saveNote } = require("./notes.service");
 // POST /api/notes/extract-pdf
 // Expects a single PDF file uploaded under field name "pdf" (multer, memory storage).
 const extractPdf = asyncHandler(async (req, res) => {
-  if (!req.file) {
-    throw new ApiError(400, "No PDF file uploaded");
-  }
+  if (!req.file) throw ApiError.from("NO_FILE");
 
   const { text, numPages } = await extractTextFromPdf(req.file.buffer);
 
@@ -23,10 +21,7 @@ const extractPdf = asyncHandler(async (req, res) => {
 const saveNotes = asyncHandler(async (req, res) => {
   const { courseId, content, source } = req.body;
 
-  if (!courseId || !content) {
-    throw new ApiError(400, "courseId and content are required");
-  }
-
+  if (!courseId || !content) throw new ApiError(400, "courseId and content are required");
   const note = await saveNote(req.user._id, courseId, content, source);
 
   res.status(200).json({

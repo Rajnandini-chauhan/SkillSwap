@@ -1,15 +1,6 @@
-const { body, validationResult } = require("express-validator");
+const { body } = require("express-validator");
 const ApiError = require("../../utils/ApiError");
-
-// Reusable helper — call this at the top of any controller
-const validate = (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    const message = errors.array()[0].msg; // return first error only
-    return next(new ApiError(400, message));
-  }
-  next();
-};
+const validate = require("../../utils/validate");
 
 const registerRules = [
   body("name")

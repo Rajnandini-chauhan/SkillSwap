@@ -59,8 +59,8 @@ const endSession = async (userId, sessionId, { durationMinutes, pomodorosComplet
     user: userId,
   });
 
-  if (!session) throw new ApiError(404, "Session not found");
-  if (session.endTime) throw new ApiError(400, "Session already ended");
+  if (!session) throw ApiError.from("SESSION_NOT_FOUND");
+  if (session.endTime) throw ApiError.from("SESSION_ALREADY_ENDED");
 
   const xpEarned = completed ? calculateXP(durationMinutes, pomodorosCompleted) : 0;
 

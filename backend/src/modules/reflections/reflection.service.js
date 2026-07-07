@@ -16,7 +16,7 @@ const createReflection = async (userId, { learned, difficult, nextWeekGoal, mood
 
   // unique index will catch duplicates, but let's give a clean error
   const existing = await Reflection.findOne({ user: userId, weekStart });
-  if (existing) throw new ApiError(409, "You have already reflected this week");
+  if (existing) throw ApiError.from("REFLECTION_EXISTS");
 
   const reflection = await Reflection.create({
     user: userId,
@@ -41,7 +41,7 @@ const getReflectionById = async (userId, reflectionId) => {
     _id: reflectionId,
     user: userId,
   });
-  if (!reflection) throw new ApiError(404, "Reflection not found");
+  throw ApiError.from("REFLECTION_NOT_FOUND");
   return reflection;
 };
 
@@ -50,7 +50,7 @@ const updateReflection = async (userId, reflectionId, updates) => {
     _id: reflectionId,
     user: userId,
   });
-  if (!reflection) throw new ApiError(404, "Reflection not found");
+  throw ApiError.from("REFLECTION_NOT_FOUND");
 
   const allowedFields = ["learned", "difficult", "nextWeekGoal", "mood"];
   allowedFields.forEach((field) => {
@@ -67,7 +67,7 @@ const deleteReflection = async (userId, reflectionId) => {
     _id: reflectionId,
     user: userId,
   });
-  if (!reflection) throw new ApiError(404, "Reflection not found");
+  throw ApiError.from("REFLECTION_NOT_FOUND");
 };
 
 

@@ -1,12 +1,8 @@
-// ═══════════════════════════════════════════════
-// SKILLSHARE – SETUP PAGE (Onboarding)
-// 3-step profile setup after signup
-// ═══════════════════════════════════════════════
-
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../lib/AuthContext'
 import { SKILLS } from '../../lib/data'
+import { usersApi } from '../../lib/usersApi'
 
 const STEPS = ['Pick skills to learn', 'Pick skills to teach', "You're all set!"]
 
@@ -14,6 +10,7 @@ export default function SetupPage() {
   const [step, setStep]     = useState(0)
   const [learnSkills, setLearnSkills] = useState([])
   const [teachSkills, setTeachSkills] = useState([])
+  const [loading, setLoading] = useState(false)
   const { user, updateUser } = useAuth()
   const navigate = useNavigate()
 
@@ -29,12 +26,35 @@ export default function SetupPage() {
     }
   }
 
-  function handleFinish() {
-    updateUser({
-      skillsLearn: learnSkills.length ? learnSkills : ['Python', 'React'],
-      skillsTeach: teachSkills.length ? teachSkills : ['Design'],
-    })
-    setStep(2)
+  async function handleFinish() {
+    setLoading(true)
+    const finalLearnSkills = learnSkills.length ? learnSkills : ['Python', 'React']
+    const finalTeachSkills = teachSkills.length ? teachSkills : ['Design']
+
+    try {
+      await usersApi.setup({
+        skillsLearn: finalLearnSkills,
+        skillsTeach: finalTeachSkills,
+      })
+
+      updateUser({
+        skillsLearn: finalLearnSkills,
+        skillsTeach: finalTeachSkills,
+        isProfileComplete: true,
+      })
+
+      setStep(2)
+    } catch (error) {
+      console.error('Setup failed:', error.message)
+      // still move forward — don't block the user
+      updateUser({
+        skillsLearn: finalLearnSkills,
+        skillsTeach: finalTeachSkills,
+      })
+      setStep(2)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -103,8 +123,13 @@ export default function SetupPage() {
               <button className="btn btn-secondary" style={{ flex: 1, padding: 13 }} onClick={() => setStep(0)}>
                 ← Back
               </button>
-              <button className="btn btn-primary" style={{ flex: 2, padding: 13 }} onClick={handleFinish}>
-                Finish Setup →
+             <button
+                className="btn btn-primary"
+                style={{ flex: 2, padding: 13 }}
+                onClick={handleFinish}
+                disabled={loading}
+              >
+                {loading ? 'Saving…' : 'Finish Setup →'}
               </button>
             </div>
           </>

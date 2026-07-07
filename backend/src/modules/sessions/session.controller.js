@@ -4,7 +4,6 @@ const ApiError = require("../../utils/ApiError");
 
 const startSession = asyncHandler(async (req, res) => {
   const { courseId } = req.body;
-  if (!courseId) throw new ApiError(400, "courseId is required");
 
   const session = await sessionService.startSession(req.user._id, courseId);
 

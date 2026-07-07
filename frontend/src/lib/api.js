@@ -14,7 +14,7 @@ export function getAccessToken() {
 }
 
 // Performs one JSON request to the backend.
-async function rawRequest(
+export async function rawRequest(
   path,
   {
     method = 'GET',
@@ -60,7 +60,7 @@ async function rawRequest(
 }
 
 // Automatically tries to refresh the access token once after a 401.
-async function request(path, options = {}) {
+export async function request(path, options = {}) {
   try {
     return await rawRequest(path, options)
   } catch (error) {

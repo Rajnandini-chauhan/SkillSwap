@@ -7,7 +7,7 @@ const { generateAccessToken, generateRefreshToken, verifyRefreshToken } = requir
 
 const registerUser = async ({ name, email, password }) => {
   const existing = await User.findOne({ email });
-  if (existing) throw new ApiError(409, "Email already registered");
+  if (existing) throw ApiError.from("EMAIL_TAKEN");
 
   // Generate verification token
   const verificationToken = crypto.randomBytes(32).toString("hex");
@@ -35,23 +35,19 @@ const registerUser = async ({ name, email, password }) => {
 };
 
 const loginUser = async ({ email, password }) => {
-  // Find user (explicitly select password since it's select:false)
   const user = await User.findOne({ email }).select("+password");
-  if (!user) throw new ApiError(401, "Invalid email or password");
+  if (!user) throw ApiError.from("INVALID_CREDENTIALS");
 
-  //  Compare password
+  // Check verification BEFORE password 
+  // to unverified accounts
+  if (!user.isVerified) throw ApiError.from("UNVERIFIED_EMAIL");
+
   const isMatch = await user.isPasswordCorrect(password);
-  if (!isMatch) throw new ApiError(401, "Invalid email or password");
+  if (!isMatch) throw ApiError.from("INVALID_CREDENTIALS");
 
-  if (!user.isVerified) {
-    throw new ApiError(403, "Please verify your email before logging in");
-  }
-
-  //  Generate both tokens
   const accessToken = generateAccessToken(user._id);
   const refreshToken = generateRefreshToken(user._id);
 
-  // Save refresh token to DB
   user.refreshToken = refreshToken;
   await user.save({ validateBeforeSave: false });
 
@@ -67,30 +63,30 @@ const loginUser = async ({ email, password }) => {
   };
 };
 
+
 const logoutUser = async (userId) => {
   await User.findByIdAndUpdate(userId, { refreshToken: null });
 };
 
 const getMe = async (userId) => {
   const user = await User.findById(userId);
-  if (!user) throw new ApiError(404, "User not found");
+  if (!user) throw ApiError.from("USER_NOT_FOUND");
   return user;
 };
 
 const refreshAccessToken = async (incomingRefreshToken) => {
-  if (!incomingRefreshToken) throw new ApiError(401, "No refresh token");
+  if (!incomingRefreshToken) throw ApiError.from("NO_REFRESH");
 
   // Verify the token is valid and not tampered
   const decoded = verifyRefreshToken(incomingRefreshToken);
 
   //  Find user and check their stored refresh token
   const user = await User.findById(decoded.userId).select("+refreshToken");
-  if (!user) throw new ApiError(401, "Invalid refresh token");
+  if (!user) throw ApiError.from("INVALID_TOKEN");
 
   //  Make sure it matches what's in DB (detects token reuse after logout)
-  if (user.refreshToken !== incomingRefreshToken) {
-    throw new ApiError(401, "Refresh token expired or already used");
-  }
+  if (user.refreshToken !== incomingRefreshToken) throw ApiError.from("INVALID_REFRESH");
+
 
   // Issue a fresh access token
   const accessToken = generateAccessToken(user._id);
@@ -102,10 +98,8 @@ const verifyEmail = async (token) => {
     "+verificationToken +verificationTokenExpiry"
   );
 
-  if (!user) throw new ApiError(400, "Invalid verification token");
-  if (user.verificationTokenExpiry < new Date()) {
-    throw new ApiError(400, "Verification token has expired");
-  }
+  if (!user) throw ApiError.from("INVALID_VERIFY_TOKEN");
+  if (user.verificationTokenExpiry < new Date()) throw ApiError.from("EXPIRED_VERIFY_TOKEN");
 
   user.isVerified = true;
   user.verificationToken = undefined;

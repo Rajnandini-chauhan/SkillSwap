@@ -46,6 +46,16 @@ app.use("/api/users", userRoutes);
 app.use("/api/sessions", sessionRoutes);
 app.use("/api/reflections", reflectionRoutes);
 
+
+// 404 handler — catches any request that didn't match a route
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: `Route ${req.method} ${req.originalUrl} not found`,
+  });
+});
+
+
 // Error middleware
 app.use((err, req, res, next) => {
   if (err.name === "MulterError") {
@@ -53,21 +63,17 @@ app.use((err, req, res, next) => {
       err.code === "LIMIT_FILE_SIZE"
         ? "File too large (max 10MB)"
         : err.message;
-
-    return res.status(400).json({
-      success: false,
-      message,
-    });
+    return res.status(400).json({ success: false, message, errorCode: "FILE_ERROR" });
   }
 
   const statusCode = err.statusCode || 500;
-  const message = err.isOperational
-    ? err.message
-    : "Something went wrong";
+  const message = err.isOperational ? err.message : "Something went wrong";
+  const errorCode = err.errorCode || "INTERNAL";
 
   res.status(statusCode).json({
     success: false,
     message,
+    errorCode,
   });
 });
 

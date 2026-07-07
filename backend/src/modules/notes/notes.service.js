@@ -1,4 +1,4 @@
-const { PDFParse } = require("pdf-parse");
+const PDFParse = require("pdf-parse");
 const ApiError = require("../../utils/ApiError");
 
 const Note = require("./notes.model");
@@ -11,9 +11,7 @@ const Note = require("./notes.model");
 // pdf-parse v2 uses a different API than v1 (PDFParse class instead of a
 // plain function call) — see https://github.com/mehmet-kozan/pdf-parse
 async function extractTextFromPdf(buffer) {
-  if (!buffer || !buffer.length) {
-    throw new ApiError(400, "No file data received");
-  }
+  if (!buffer || !buffer.length) throw ApiError.from("NO_FILE_DATA");
 
   const parser = new PDFParse({ data: buffer });
   let result;
@@ -21,9 +19,9 @@ async function extractTextFromPdf(buffer) {
     result = await parser.getText();
   } catch (err) {
     if (err?.name === "PasswordException") {
-      throw new ApiError(400, "This PDF is password-protected. Please upload an unlocked PDF.");
+      throw ApiError.from("PROTECTED_PDF");
     }
-    throw new ApiError(400, "Could not read this PDF. Make sure it isn't corrupted or password-protected.");
+    throw ApiError.from("INVALID_PDF");
   } finally {
     await parser.destroy();
   }
@@ -31,10 +29,7 @@ async function extractTextFromPdf(buffer) {
   const text = (result.text || "").trim();
 
   if (!text) {
-    throw new ApiError(
-      422,
-      "No readable text found in this PDF. It may be a scanned/image-only document — OCR support is coming soon."
-    );
+    throw ApiError.from("NO_PDF_TEXT");
   }
 
   return { text, numPages: result.total ?? result.pages?.length ?? null };
