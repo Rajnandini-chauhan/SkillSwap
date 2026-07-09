@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../lib/AuthContext'
-import { authApi } from '../../lib/api'
+import { authApi } from '../../lib/authApi'
 import ThemeToggle from '../../components/ThemeToggle'
 import { NotesIllustration, RainbowCloudIllustration } from '../../components/DashboardIllustrations'
 
