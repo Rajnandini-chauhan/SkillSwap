@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { quizApi } from '../../lib/api'
+import { quizApi } from '../../lib/quizApi'
 import { useToast } from '../../lib/ToastContext'
 
 function StatusBadge({ status }) {

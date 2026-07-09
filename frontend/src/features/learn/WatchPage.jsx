@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { COURSES, DEFAULT_CHECKLIST } from '../../lib/data'
-import { notesApi } from '../../lib/api'
+import { notesApi } from '../../lib/notesApi'
 import { useToast } from '../../lib/ToastContext'
 
 import QuizPanel from './QuizPanel'
