@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom'
 
 import { COURSES, DEFAULT_CHECKLIST } from '../../lib/data'
 import { notesApi } from '../../lib/notesApi'
+import { sessionsApi } from '../../lib/sessionsApi'
+import { useAuth } from '../../lib/AuthContext'
 import { useToast } from '../../lib/ToastContext'
 
 import QuizPanel from './QuizPanel'
@@ -351,6 +353,7 @@ export default function WatchPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { showToast } = useToast()
+  const { refreshUser } = useAuth()
 
   const course = COURSES.find(
     (item) => item.id === Number(id)
@@ -380,6 +383,12 @@ export default function WatchPage() {
         ...item,
       }))
     )
+
+  // Session tracking — backend session created via "Start Session"
+  const [sessionId, setSessionId] = useState(null)
+  const [sessionStartTime, setSessionStartTime] = useState(null)
+  const [pomodoroCount, setPomodoroCount] = useState(0)
+  const [startingSession, setStartingSession] = useState(false)
 
   const videoRef = useRef(null)
 
@@ -467,6 +476,26 @@ export default function WatchPage() {
       showToast(
         'Camera permission denied. Please allow camera access in your browser.'
       )
+    }
+  }
+
+  // ───────────────────────────────────────────
+  // Session
+  // ───────────────────────────────────────────
+
+  async function handleStartSession() {
+    if (sessionId || startingSession) return
+
+    setStartingSession(true)
+    try {
+      const session = await sessionsApi.start(String(course.id))
+      setSessionId(session._id)
+      setSessionStartTime(new Date())
+      showToast('Session started — good luck! 🎯')
+    } catch (error) {
+      showToast(error.message || 'Could not start session')
+    } finally {
+      setStartingSession(false)
     }
   }
 
@@ -592,6 +621,19 @@ export default function WatchPage() {
           <h2 className={styles.courseTitle}>
             {course.title}
           </h2>
+
+          <button
+            type="button"
+            className={`btn btn-sm ${sessionId ? 'btn-secondary' : 'btn-primary'}`}
+            onClick={handleStartSession}
+            disabled={!!sessionId || startingSession}
+          >
+            {sessionId
+              ? '✓ Session active'
+              : startingSession
+                ? 'Starting…'
+                : '▶ Start Session'}
+          </button>
 
           <button
             type="button"

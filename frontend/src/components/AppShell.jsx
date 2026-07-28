@@ -12,6 +12,7 @@ function Icon({ name, className = '' }) {
     teach: <><path d="m12 3 1.4 4.1L17.5 8.5l-4.1 1.4L12 14l-1.4-4.1-4.1-1.4 4.1-1.4Z"/><path d="m18 15 .8 2.2L21 18l-2.2.8L18 21l-.8-2.2L15 18l2.2-.8Z"/></>,
     swap: <><path d="M7 7h11l-3-3"/><path d="m18 7-3 3"/><path d="M17 17H6l3 3"/><path d="m6 17 3-3"/></>,
     profile: <><circle cx="12" cy="8" r="3.5"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/></>,
+    reflect: <><path d="M12 21c-3-1.5-7-2-7-6V5l7-2 7 2v10c0 4-4 4.5-7 6Z"/><path d="M9 11.5l2 2 4-4"/></>,
     settings: <><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21h-4v-.09A1.7 1.7 0 0 0 8.6 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3v-4h.09A1.7 1.7 0 0 0 4.6 8.6a1.7 1.7 0 0 0-.34-1.87l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3h4v.09A1.7 1.7 0 0 0 15.4 4.6a1.7 1.7 0 0 0 1.87-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9c.38.25.73.6 1 .6h.1v4h-.09A1.7 1.7 0 0 0 19.4 15Z"/></>,
     bell: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7"/><path d="M10 19h4"/></>,
     menu: <><path d="M4 7h16M4 12h16M4 17h16"/></>,
@@ -31,6 +32,7 @@ const NAV_ITEMS = [
   { to: '/app/learn', label: 'Learn', icon: 'learn' },
   { to: '/app/teach', label: 'Teach', icon: 'teach' },
   { to: '/app/peers', label: 'Skill Swap', icon: 'swap' },
+  { to: '/app/reflections', label: 'Reflect', icon: 'reflect' },
   { to: '/app/profile', label: 'Profile', icon: 'profile' },
 ]
 
@@ -39,6 +41,7 @@ const PAGE_META = {
   '/app/learn': ['Learn', 'Continue building your skills'],
   '/app/teach': ['Teach', 'Share what you know'],
   '/app/peers': ['Skill Swap', 'Find the right learning partner'],
+  '/app/reflections': ['Reflect', 'Review your learning journey'],
   '/app/profile': ['Profile', 'Manage your learning identity'],
 }
 
