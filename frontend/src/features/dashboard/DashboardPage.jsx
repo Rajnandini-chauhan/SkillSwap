@@ -1,6 +1,8 @@
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../lib/AuthContext'
 import { COURSES, getGreeting } from '../../lib/data'
+import { dashboardApi } from '../../lib/dashboardApi'
 import {
   FocusTomatoIllustration,
   NotesIllustration,
@@ -53,25 +55,42 @@ const quickActions = [
 export default function DashboardPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const [dashboardData, setDashboardData] = useState(null)
+  const [loading, setLoading] = useState(true)
   const firstName = user?.name?.split(' ')[0] || 'Learner'
   const todayIndex = Math.max(0, Math.min(6, (new Date().getDay() + 6) % 7))
   const weekDates = getCurrentWeekDates()
 
-  let storedProgress = {}
-  try {
-    storedProgress = JSON.parse(localStorage.getItem('skilldge_progress') || '{}')
-  } catch {
-    storedProgress = {}
+  useEffect(() => {
+    async function fetchDashboard() {
+      try {
+        const data = await dashboardApi.getSummary()
+        setDashboardData(data)
+      } catch (error) {
+        console.error('Failed to fetch dashboard data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchDashboard()
+  }, [])
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh', color: 'var(--text2)' }}>
+        Loading your dashboard...
+      </div>
+    )
   }
 
   const courses = COURSES.map(course => ({
     ...course,
-    progress: storedProgress[course.id] ?? course.progress,
+    progress: dashboardData?.progress?.[course.id] ?? course.progress,
   }))
   const continueCourse = courses.find(course => course.progress > 0 && course.progress < 100) || courses[0]
   const activeCount = courses.filter(course => course.progress > 0).length
-  const goalCount = Math.min(4, activeCount)
-  const weeklyProgress = Math.min(100, Math.max(20, goalCount * 25))
+  const goalCount = dashboardData?.weeklyGoalReached ?? Math.min(4, activeCount)
+  const weeklyProgress = dashboardData?.weeklyProgress ?? Math.min(100, Math.max(20, goalCount * 25))
   const skills = (user?.skillsLearn || []).slice(0, 4)
 
   return (
