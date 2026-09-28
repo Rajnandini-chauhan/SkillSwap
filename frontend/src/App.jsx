@@ -15,6 +15,7 @@ import WatchPage     from './features/learn/WatchPage'
 import TeachPage     from './features/teach/TeachPage'
 import PeersPage     from './features/peers/PeersPage'
 import ProfilePage   from './features/profile/ProfilePage'
+import ReflectionsPage from './features/reflections/ReflectionsPage'
 import AppShell      from './components/AppShell'
 
 // ProtectedRoute must live inside AuthProvider — fixed placement below.
@@ -57,6 +58,7 @@ function AppRoutes() {
           <Route path="watch/:id"  element={<PageTransition><WatchPage /></PageTransition>} />
           <Route path="teach"      element={<PageTransition><TeachPage /></PageTransition>} />
           <Route path="peers"      element={<PageTransition><PeersPage /></PageTransition>} />
+          <Route path="reflections" element={<PageTransition><ReflectionsPage /></PageTransition>} />
           <Route path="profile"    element={<PageTransition><ProfilePage /></PageTransition>} />
         </Route>
 
