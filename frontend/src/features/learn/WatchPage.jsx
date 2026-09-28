@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { COURSES, DEFAULT_CHECKLIST } from '../../lib/data'
+import { coursesApi } from '../../lib/coursesApi'
 import { notesApi } from '../../lib/notesApi'
 import { sessionsApi } from '../../lib/sessionsApi'
 import { useAuth } from '../../lib/AuthContext'
@@ -495,8 +496,11 @@ export default function WatchPage() {
   const { showToast } = useToast()
   const { refreshUser } = useAuth()
 
-  const course = COURSES.find(
-    (item) => item.id === Number(id)
+  const [course, setCourse] = useState(() =>
+    COURSES.find((item) => String(item.id) === id) || null
+  )
+  const [courseLoading, setCourseLoading] = useState(() =>
+    !COURSES.some((item) => String(item.id) === id)
   )
 
   const [activeTab, setActiveTab] =
@@ -533,6 +537,39 @@ export default function WatchPage() {
   const videoRef = useRef(null)
 
   useEffect(() => {
+    const builtInCourse = COURSES.find((item) => String(item.id) === id)
+    if (builtInCourse) {
+      setCourse(builtInCourse)
+      setCourseLoading(false)
+      return
+    }
+
+    let cancelled = false
+    setCourseLoading(true)
+
+    coursesApi.getById(id)
+      .then((savedCourse) => {
+        if (!cancelled) {
+          setCourse({
+            ...savedCourse,
+            id: savedCourse._id,
+            ytId: savedCourse.youtubeVideoId,
+          })
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setCourse(null)
+      })
+      .finally(() => {
+        if (!cancelled) setCourseLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [id])
+
+  useEffect(() => {
     return () => {
       if (camStream) {
         camStream
@@ -541,6 +578,10 @@ export default function WatchPage() {
       }
     }
   }, [camStream])
+
+  if (courseLoading) {
+    return <div style={{ padding: 40, textAlign: 'center' }}>Loading course…</div>
+  }
 
   if (!course) {
     return (
@@ -700,7 +741,7 @@ export default function WatchPage() {
   // ───────────────────────────────────────────
 
   function handleQuizCompleted() {
-    saveProgress(Number(id), 100)
+    saveProgress(course.id, 100)
 
     setChecklist((previous) =>
       previous.map((item) =>

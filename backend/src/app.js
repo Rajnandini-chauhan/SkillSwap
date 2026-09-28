@@ -13,6 +13,7 @@ const quizRoutes = require("./modules/quiz/quiz.routes");
 const userRoutes = require("./modules/users/user.routes");
 const sessionRoutes = require("./modules/sessions/session.routes");
 const reflectionRoutes = require("./modules/reflections/reflection.routes");
+const coursesRoutes = require("./modules/courses/courses.routes.js").default;
 
 // Security & parsing middleware
 app.use(helmet());
@@ -45,6 +46,7 @@ app.use("/api/quiz", quizRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/sessions", sessionRoutes);
 app.use("/api/reflections", reflectionRoutes);
+app.use("/api/courses", coursesRoutes);
 
 
 // 404 handler — catches any request that didn't match a route
