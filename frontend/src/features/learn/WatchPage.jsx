@@ -257,6 +257,146 @@ function FocusTab({ checklist, onToggle }) {
 }
 
 // ─────────────────────────────────────────────
+// Pomodoro timer
+// ─────────────────────────────────────────────
+
+const WORK_SECONDS = 25 * 60
+const BREAK_SECONDS = 5 * 60
+
+function formatTime(totalSeconds) {
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+}
+
+function PomodoroTimer({
+  sessionActive,
+  pomodoroCount,
+  onPomodoroComplete,
+}) {
+  const [mode, setMode] = useState('work') // 'work' | 'break'
+  const [secondsLeft, setSecondsLeft] = useState(WORK_SECONDS)
+  const [running, setRunning] = useState(false)
+  const { showToast } = useToast()
+
+  useEffect(() => {
+    if (!running) return
+
+    const interval = setInterval(() => {
+      setSecondsLeft((previous) => {
+        if (previous <= 1) {
+          if (mode === 'work') {
+            onPomodoroComplete()
+            showToast('🍅 Pomodoro complete! Take a 5 minute break.')
+            setMode('break')
+            return BREAK_SECONDS
+          }
+
+          showToast('Break over — back to focus!')
+          setMode('work')
+          return WORK_SECONDS
+        }
+
+        return previous - 1
+      })
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [running, mode])
+
+  function toggleRunning() {
+    setRunning((previous) => !previous)
+  }
+
+  function resetTimer() {
+    setRunning(false)
+    setMode('work')
+    setSecondsLeft(WORK_SECONDS)
+  }
+
+  const totalForMode = mode === 'work' ? WORK_SECONDS : BREAK_SECONDS
+  const progressPercent = Math.round(
+    ((totalForMode - secondsLeft) / totalForMode) * 100
+  )
+
+  return (
+    <div
+      style={{
+        padding: 16,
+        background: 'var(--bg2)',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius)',
+        marginTop: 16,
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 10,
+        }}
+      >
+        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text2)' }}>
+          {mode === 'work' ? '🍅 FOCUS TIMER' : '☕ BREAK'}
+        </span>
+        <span style={{ fontSize: 12, color: 'var(--text2)' }}>
+          {pomodoroCount} completed
+        </span>
+      </div>
+
+      <div
+        style={{
+          fontSize: 36,
+          fontWeight: 700,
+          textAlign: 'center',
+          marginBottom: 10,
+          fontVariantNumeric: 'tabular-nums',
+        }}
+      >
+        {formatTime(secondsLeft)}
+      </div>
+
+      <div className="progress-bar" style={{ marginBottom: 12 }}>
+        <div
+          className="progress-fill"
+          style={{
+            width: `${progressPercent}%`,
+            background: mode === 'work' ? 'var(--accent3)' : 'var(--accent2)',
+          }}
+        />
+      </div>
+
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button
+          type="button"
+          className={`btn btn-sm ${running ? 'btn-secondary' : 'btn-primary'}`}
+          onClick={toggleRunning}
+          disabled={!sessionActive}
+          style={{ flex: 1 }}
+        >
+          {running ? '⏸ Pause' : '▶ Start'}
+        </button>
+
+        <button
+          type="button"
+          className="btn btn-secondary btn-sm"
+          onClick={resetTimer}
+        >
+          ↺ Reset
+        </button>
+      </div>
+
+      {!sessionActive && (
+        <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 8 }}>
+          Start a session above to enable the timer.
+        </p>
+      )}
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────
 // Local storage helpers
 // ─────────────────────────────────────────────
 
@@ -497,6 +637,10 @@ export default function WatchPage() {
     } finally {
       setStartingSession(false)
     }
+  }
+
+  function handlePomodoroComplete() {
+    setPomodoroCount((previous) => previous + 1)
   }
 
   // ───────────────────────────────────────────
@@ -758,6 +902,12 @@ export default function WatchPage() {
             deeper follow-up questions.
           </p>
         </div>
+
+        <PomodoroTimer
+          sessionActive={!!sessionId}
+          pomodoroCount={pomodoroCount}
+          onPomodoroComplete={handlePomodoroComplete}
+        />
       </div>
 
       {/* Right sidebar */}
